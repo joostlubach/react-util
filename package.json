@@ -1,5 +1,5 @@
 {
-  "name": "react-util",
+  "name": "@joostlubach/react-util",
   "version": "1.0.0",
   "description": "Utilities for React, like commonly used hooks.",
   "author": "Joost Lubach",
