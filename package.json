@@ -1,6 +1,6 @@
 {
   "name": "@joostlubach/react-util",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Utilities for React, like commonly used hooks.",
   "author": "Joost Lubach",
   "private": false,
@@ -21,10 +21,11 @@
     }
   },
   "scripts": {
-    "build": "pnpm clean && pnpm build:tsc",
-    "build:tsc": "pnpm build:tsc:esm && pnpm build:tsc:cjs",
+    "build": "npm clean && npm build:tsc",
+    "build:tsc": "npm build:tsc:esm && npm build:tsc:cjs",
     "build:tsc:esm": "tsc -p tsconfig.prod.json --module esnext --outDir dist/esm --declarationDir dist/types",
     "build:tsc:cjs": "tsc -p tsconfig.prod.json --module commonjs --outDir dist/cjs --declaration false --declarationMap false",
+    "postinstall": "npm run build",
     "clean": "rimraf dist",
     "lint": "eslint src --ext .ts,.tsx",
     "check": "tsc -p . --noEmit",
