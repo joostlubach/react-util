@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Utilities for React, like commonly used hooks.",
   "author": "Joost Lubach",
+  "private": false,
   "license": "MIT",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
