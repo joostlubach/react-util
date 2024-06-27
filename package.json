@@ -1,0 +1,58 @@
+{
+  "name": "react-util",
+  "version": "1.0.0",
+  "description": "Utilities for React, like commonly used hooks.",
+  "author": "Joost Lubach",
+  "license": "MIT",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "default": "./dist/cjs/index.js"
+    },
+    "./hooks": {
+      "types": "./dist/types/hooks.d.ts",
+      "import": "./dist/esm/hooks.js",
+      "default": "./dist/cjs/hooks.js"
+    }
+  },
+  "scripts": {
+    "build": "pnpm clean && pnpm build:tsc",
+    "build:tsc": "pnpm build:tsc:esm && pnpm build:tsc:cjs",
+    "build:tsc:esm": "tsc -p tsconfig.prod.json --module esnext --outDir dist/esm --declarationDir dist/types",
+    "build:tsc:cjs": "tsc -p tsconfig.prod.json --module commonjs --outDir dist/cjs --declaration false --declarationMap false",
+    "clean": "rimraf dist",
+    "lint": "eslint src --ext .ts,.tsx",
+    "check": "tsc -p . --noEmit",
+    "test": "NODE_ENV=test jest"
+  },
+  "peerDependencies": {
+    "mobx-react": "^7.6.0",
+    "react": "^18.0",
+    "react-dom": "^18.0"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21",
+    "logger": "workspace:^",
+    "mobx-react": "^7.6.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-timer": "workspace:^",
+    "scroll-into-view": "^1.16.2",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.17.0",
+    "@types/react": "^18.2.79",
+    "@types/scroll-into-view": "^1.16.4",
+    "@types/uuid": "^9.0.8",
+    "copyfiles": "^2.4.1",
+    "rimraf": "^5.0.5",
+    "tsc-alias": "^1.8.8",
+    "typescript": "5.4.3",
+    "ytil": "workspace:^"
+  }
+}
