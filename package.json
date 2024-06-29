@@ -1,5 +1,5 @@
 {
-  "name": "@joostlubach/react-util",
+  "name": "react-util",
   "version": "1.0.1",
   "description": "Utilities for React, like commonly used hooks.",
   "author": "Joost Lubach",
@@ -15,21 +15,18 @@
     "build:tsc": "npm build:tsc:esm && npm build:tsc:cjs",
     "build:tsc:esm": "tsc -p tsconfig.prod.json --module esnext --outDir dist/esm --declarationDir dist/types",
     "build:tsc:cjs": "tsc -p tsconfig.prod.json --module commonjs --outDir dist/cjs --declaration false --declarationMap false",
-    "postinstall": "npm run build",
     "clean": "rimraf dist",
     "lint": "eslint src --ext .ts,.tsx",
     "check": "tsc -p . --noEmit",
     "test": "NODE_ENV=test jest"
   },
   "peerDependencies": {
-    "mobx-react": "^7.6.0",
     "react": "^18.0",
     "react-dom": "^18.0"
   },
   "dependencies": {
     "lodash": "^4.17.21",
     "logger": "workspace:^",
-    "mobx-react": "^7.6.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-timer": "workspace:^",

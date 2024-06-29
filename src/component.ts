@@ -1,4 +1,3 @@
-import { observer as mobx_observer } from 'mobx-react'
 import React from 'react'
 
 export function component<T extends React.ComponentType<any>>(name: string, Component: T): T {
@@ -13,14 +12,6 @@ export function memo<T extends React.ComponentType<any>>(
 ): T {
   Object.assign(Component, {displayName: name})
   return React.memo(Component, propsAreEqual) as any
-}
-
-export function observer<T extends React.ComponentType<any>>(
-  name:           string,
-  Component:      T,
-) {
-  Object.assign(Component, {displayName: name})
-  return mobx_observer(Component)
 }
 
 export function forwardRef<T, P>(
