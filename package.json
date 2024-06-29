@@ -5,20 +5,10 @@
   "author": "Joost Lubach",
   "private": false,
   "license": "MIT",
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/types/index.d.ts",
+  "main": "./src/index.ts",
   "exports": {
-    ".": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/esm/index.js",
-      "default": "./dist/cjs/index.js"
-    },
-    "./hooks": {
-      "types": "./dist/types/hooks.d.ts",
-      "import": "./dist/esm/hooks.js",
-      "default": "./dist/cjs/hooks.js"
-    }
+    ".": "./src/index.ts",
+    "./hooks": "./src/hooks/index.ts"
   },
   "scripts": {
     "build": "npm clean && npm build:tsc",
