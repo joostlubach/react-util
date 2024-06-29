@@ -17,7 +17,7 @@
     "build:tsc:cjs": "tsc -p tsconfig.prod.json --module commonjs --outDir dist/cjs --declaration false --declarationMap false",
     "clean": "rimraf dist",
     "lint": "eslint src --ext .ts,.tsx",
-    "check": "tsc -p . --noEmit"
+    "check": "tsc --noEmit"
   },
   "peerDependencies": {
     "react": "^18.0",
