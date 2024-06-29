@@ -1,6 +1,5 @@
 import React from 'react'
 import { useTimer } from 'react-timer'
-
 import { RefMap } from './refs'
 
 export function useCompoundFocus<K extends string>(refs: RefMap<K, HTMLInputElement>, options: CompoundFocusOptions = {}): CompoundFocusHook<K> {

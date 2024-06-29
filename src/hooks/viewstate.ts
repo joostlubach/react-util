@@ -1,5 +1,4 @@
 import React from 'react'
-
 import { usePrevious } from './previous'
 
 const storage: Storage | null = 'localStorage' in globalThis ? globalThis.localStorage : null

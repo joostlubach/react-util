@@ -1,6 +1,5 @@
 import React from 'react'
 import scrollIntoView from 'scroll-into-view'
-
 import { useContinuousRef } from './refs'
 
 export function useScrollIntoView(settings?: __ScrollIntoView.Settings) {

@@ -1,5 +1,4 @@
 import React from 'react'
-
 import { memo } from './component'
 
 export function createSuperContainer<P>(...wrappers: SuperContainerWrapper<P>[]): React.ComponentType<SuperContainerProps<P>> {
