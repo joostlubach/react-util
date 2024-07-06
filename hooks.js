@@ -1,1 +1,1 @@
-export * from './dist/cjs/hooks'
+export * from './dist/cjs/hooks.js'
