@@ -11,9 +11,10 @@
     "./hooks": "./src/hooks/index.ts"
   },
   "scripts": {
-    "lint": "eslint src --ext .ts,.tsx",
-    "check": "tsc --noEmit"
-  },
+    "check": "tsc -p . --noEmit",
+    "lint": "eslint src --ext ts,tsx",
+    "test": "NODE_ENV=test DATA_ENV=test jest"
+},
   "peerDependencies": {
     "react": "^18.0",
     "react-dom": "^18.0"
