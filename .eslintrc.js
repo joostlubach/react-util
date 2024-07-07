@@ -1,6 +1,6 @@
 module.exports = {
-  extends: '../../.eslintrc.web.yml',
-  ignorePatterns: ['/.eslintrc.js'],
+  extends: '../../.eslintrc.yml',
+  ignorePatterns: ['/.eslintrc.js', '/hooks.d.ts'],
   parserOptions: {
     project: './tsconfig.json',
     tsconfigRootDir: __dirname
