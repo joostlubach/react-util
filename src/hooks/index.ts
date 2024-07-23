@@ -8,6 +8,7 @@ export * from './previous'
 export * from './refs'
 export * from './trace'
 export * from './useCompoundFocus'
+export * from './useMeasure'
 export * from './useScrollIntoView'
 export * from './viewstate'
 // /index
