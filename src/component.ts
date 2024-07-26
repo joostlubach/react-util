@@ -16,8 +16,8 @@ export function memo<T extends React.ComponentType<any>>(
 }
 
 export function observer<T extends React.ComponentType<any>>(
-  name:           string,
-  Component:      T,
+  name:      string,
+  Component: T,
 ) {
   Object.assign(Component, {displayName: name})
   return mobx_observer(Component)
