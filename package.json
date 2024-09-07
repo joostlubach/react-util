@@ -31,14 +31,13 @@
     "test": "NODE_ENV=test jest"
   },
   "peerDependencies": {
-    "mobx-react": "^9.1.1",
+    "mobx-react": ">=9.0.0",
     "react": "^18.0",
     "react-dom": "^18.0"
   },
   "dependencies": {
     "lodash": "^4.17.21",
     "logger": "workspace:^",
-    "mobx-react": "^9.1.1",
     "react-timer": "workspace:^",
     "scroll-into-view": "^1.16.2",
     "uuid": "10.0.0"
