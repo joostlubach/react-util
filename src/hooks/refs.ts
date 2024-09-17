@@ -58,6 +58,7 @@ export function useRefMap<K, V>(deps: any[] = []): RefMap<K, V> {
       size:    () => map.size,
       get:     key => map.get(key),
       getter:  key => () => map.get(key),
+      getters: Array.from(map.keys()).map(key => () => map.get(key)),
       all:     () => [...map.values()],
       object:  () => Object.fromEntries(map.entries()),
       entries: () => [...map.entries()],
@@ -74,6 +75,7 @@ export interface RefMap<K, V> {
   clear:   () => void
   get:     (key: K) => V | undefined
   getter:  (key: K) => () => V | undefined
+  getters: (() => V | undefined)[]
   all:     () => V[]
   object:  () => Record<K extends string | number ? K : string, V>
   entries: () => Array<[K, V]>
