@@ -1,7 +1,7 @@
-import React from 'react'
+import { useMemo, useRef } from 'react'
 
 export function useContinuousRef<T>(current: T): React.MutableRefObject<T> {
-  const ref = React.useRef<T>(current)
+  const ref = useRef<T>(current)
   ref.current = current
   return ref
 }
@@ -34,25 +34,33 @@ export function isRefObject<T>(ref: React.Ref<T>): ref is React.RefObject<T> {
   }
 }
 
-export function useRefMap<K, V>(deps: any[] = []): RefMap<K, V> {
-  return React.useMemo((): RefMap<K, V> => {
+export function useRefMap<K, V>(callbacks: RefMapCallbacks<K, V> = {}): RefMap<K, V> {
+  const callbacksRef = useContinuousRef(callbacks)
+
+  return useMemo((): RefMap<K, V> => {
     const map = new Map<K, V>()
+    const {onAssign, onUnassign} = callbacksRef.current
+
+    const set = (key: K, value: V | null) => {
+      const current = map.get(key)
+      if (current != null) {
+        onUnassign?.(current, key)
+      }
+      if (value != null) {
+        map.set(key, value)
+      } else {
+        map.delete(key)
+      }
+      if (value != null) {
+        onAssign?.(value, key)
+      }
+    }
 
     return {
-      for: key => current => {
-        if (current == null) {
-          map.delete(key)
-        } else {
-          map.set(key, current)
-        }
+      for: key => value => {
+        set(key, value)
       },
-      set: (key, current) => {
-        if (current == null) {
-          map.delete(key)
-        } else {
-          map.set(key, current)
-        }
-      },
+      set,
       clear: () => { map.clear() },
 
       size:    () => map.size,
@@ -63,9 +71,12 @@ export function useRefMap<K, V>(deps: any[] = []): RefMap<K, V> {
       object:  () => Object.fromEntries(map.entries()),
       entries: () => [...map.entries()],
     }
-  // There is a common use case for ref maps to be invalidated based on some dependency, so allow custom deps here.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [...deps])
+  }, [callbacksRef])
+}
+
+export interface RefMapCallbacks<K, V> {
+  onAssign?:   (value: V, key: K) => any
+  onUnassign?: (value: V, key: K) => any
 }
 
 export interface RefMap<K, V> {
