@@ -3,8 +3,8 @@ import { useRefMap } from 'react-util/hooks'
 
 export function useScrollSync<K>() {
   const refs = useRefMap<K, HTMLElement>({
-    onAssign:   element => { console.log('assign', element); element.addEventListener('scroll', handleScroll) },
-    onUnassign: element => { console.log('unassign', element); element.removeEventListener('scroll', handleScroll) },
+    onAssign:   element => element.addEventListener('scroll', handleScroll),
+    onUnassign: element => element.removeEventListener('scroll', handleScroll),
   })
 
   const handleScroll = useCallback((event: Event) => {
