@@ -3,10 +3,15 @@ import { usePrevious } from './previous'
 
 const storage: Storage | null = 'localStorage' in globalThis ? globalThis.localStorage : null
 
-export function useViewState<T>(key: string, initialValue: T): ViewStateHook<T> {
+export function useViewState<T>(key: undefined, initialValue?: T): ViewStateHook<undefined>
+export function useViewState<T>(key: string, initialValue: T): ViewStateHook<T>
+export function useViewState<T>(key: string | undefined, initialValue?: T): ViewStateHook<T | undefined>
+export function useViewState<T>(key: string | undefined, initialValue: T): ViewStateHook<T> {
   const prevKey = usePrevious(key)
 
   const getValueFromStorage = React.useCallback(() => {
+    if (key === undefined) { return undefined }
+
     const serialized = storage?.getItem(key)
     if (serialized == null) { return initialValue }
 
@@ -32,6 +37,8 @@ export function useViewState<T>(key: string, initialValue: T): ViewStateHook<T> 
 
   // When setting the value, update local storage and the local cache.
   const setValue = React.useCallback((value: T) => {
+    if (key === undefined) { return }
+
     if (value === undefined) {
       storage?.removeItem(key)
     } else {
@@ -42,11 +49,13 @@ export function useViewState<T>(key: string, initialValue: T): ViewStateHook<T> 
 
   // When setting the value, update local storage and the local cache.
   const deleteValue = React.useCallback(() => {
+    if (key === undefined) { return }
+
     storage?.removeItem(key)
     setCache(undefined)
   }, [key])
 
-  return [value, setValue, deleteValue]
+  return [value as T, setValue, deleteValue]
 }
 
 export type ViewStateHook<T> = [
