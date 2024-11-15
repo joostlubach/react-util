@@ -65,7 +65,28 @@ export function findLinks(text: string, options: AutolinkOptions = {}): LinkRang
   return results
 }
 
-export function applyLinks(text: string, links: LinkRange[]) {
+export function applyLinksMarkdown(text: string, links: LinkRange[]): string {
+  const out: string[] = []
+
+  let offset: number = 0
+  for (const link of links) {
+    if (offset >= text.length) { break }
+
+    if (link.offset > offset) {
+      out.push(text.slice(offset, link.offset - offset))
+    }
+    out.push(`[${text.slice(link.offset, link.offset + link.length)}](${link.url})`)
+
+    offset = link.offset + link.length
+  }
+
+  if (offset < text.length) {
+    out.push(text.slice(offset))
+  }
+  return out.join('')
+}
+
+export function applyLinksReact(text: string, links: LinkRange[]): React.ReactNode {
   const out: React.ReactNode[] = []
 
   let offset: number = 0
