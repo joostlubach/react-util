@@ -1,4 +1,6 @@
+import { isArray, isPlainObject } from 'lodash'
 import React from 'react'
+import { objectKeys } from 'ytil'
 import { useContinuousRef } from './refs'
 
 /**
@@ -10,10 +12,22 @@ import { useContinuousRef } from './refs'
  * Make sure to canonize the deps array, e.g. sorting object keys alphabetically to avoid unnecessary
  * re-renders.
  */
-export function useWithCustomDeps<T>(value: T, valueToDeps: (value: T) => any[]) {
+export function useWithStableDeps<T>(value: T, valueToDeps: ((value: T) => any[]) = defaultValueToDeps) {
   const currentValueRef = useContinuousRef(value)
   const deps = valueToDeps(value)
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   return React.useMemo(() => currentValueRef.current, deps)
+}
+
+function defaultValueToDeps(val: any): any[] {
+  if (isArray(val)) {
+    return [JSON.stringify([...val].sort())]
+  } else if (isPlainObject(val)) {
+    const sortedKeys = objectKeys(val).sort()
+    const sorted = sortedKeys.map(it => [it, val[it]])
+    return [JSON.stringify(sorted)]
+  } else {
+    return []
+  }
 }
