@@ -2,8 +2,8 @@ import React, { useRef } from 'react'
 import { Size } from 'ytil'
 import { isRefObject } from './refs'
 
-export function useMeasure(ref: React.RefObject<HTMLElement>, options?: UseMeasureOptions): Size
-export function useMeasure(options?: UseMeasureOptions): [Size, React.Ref<HTMLElement>]
+export function useMeasure<E extends HTMLElement>(ref: React.RefObject<E>, options?: UseMeasureOptions): Size
+export function useMeasure<E extends HTMLElement>(options?: UseMeasureOptions): [Size, React.Ref<E>]
 export function useMeasure(...args: any[]) {
   const ownRef = useRef()
   const ref = isRefObject(args[0]) ? args.shift() : ownRef
