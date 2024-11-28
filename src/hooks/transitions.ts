@@ -59,5 +59,5 @@ export function useTransitionValue<E extends HTMLElement>(ref: React.RefObject<E
     }
   }, [setValue, ref, calculate, timer, interval, obj])
 
-  return value
+  return [value, setValue] as const
 }
