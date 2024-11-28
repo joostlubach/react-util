@@ -5,4 +5,5 @@ export * from './focus'
 export * from './mouse'
 export * from './queries'
 export * from './touch'
+export * from './transform'
 // /index
