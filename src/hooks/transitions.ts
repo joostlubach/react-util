@@ -23,8 +23,13 @@ export function useOverflowDuringTransition(ref: React.RefObject<HTMLElement>, o
   }, [overflow, ref])
 }
 
-export function useTransitionValue<E extends HTMLElement>(ref: React.RefObject<E>, calculate: (element: E) => number, interval: number = 50) {
-  const [value, setValue] = useState<number | undefined>()
+export function useTransitionValue<E extends HTMLElement>(
+  ref: React.RefObject<E>,
+  calculate: (element: E) => number,
+  getDefault: () => number,
+  interval: number = 50
+) {
+  const [value, setValue] = useState<number>(getDefault())
   const timer = useTimer()
 
   const obj = useMemo(() => ({}), [])
@@ -46,6 +51,7 @@ export function useTransitionValue<E extends HTMLElement>(ref: React.RefObject<E
     const onTransitionEnd = () => {
       timer.setTimeout(() => {
         timer.clearAll()
+        setValue(getDefault())
       }, 16)
     }
 
@@ -57,7 +63,7 @@ export function useTransitionValue<E extends HTMLElement>(ref: React.RefObject<E
       element.removeEventListener('transitionstart', onTransitionStart)
       element.removeEventListener('transitionend', onTransitionEnd)
     }
-  }, [setValue, ref, calculate, timer, interval, obj])
+  }, [setValue, ref, calculate, timer, interval, obj, getDefault])
 
   return [value, setValue] as const
 }
