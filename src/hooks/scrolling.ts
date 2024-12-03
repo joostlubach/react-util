@@ -1,4 +1,6 @@
+import { clamp } from 'lodash'
 import { useCallback, useEffect, useState } from 'react'
+import { useTimer } from 'react-timer'
 import { RefMap, useRefMap } from './refs'
 
 export function useScrollInfo(element: Element): ScrollInfo {
@@ -80,4 +82,64 @@ export function useScrollSync<K>() {
   }, [refs])
 
   return useCallback((key: K) => refs.for(key), [refs])
+}
+
+export function useScrollTo(element: HTMLElement, options: UseScrollToOptions = {}) {
+  const {
+    easing = ScrollEasing.easeInOutCubic,
+  } = options
+
+  const timer = useTimer()
+
+  const scrollTo = useCallback((dest: Pick<ScrollToOptions, 'left' | 'top'>) => {
+    const destTop = dest.top
+    const destLeft = dest.left
+
+    let startTop = element.scrollTop
+    let startLeft = element.scrollLeft
+    let startTime = Date.now()
+
+    const distance = Math.max(Math.abs((destTop ?? startTop) - startTop), Math.abs((destLeft ?? startLeft) - startLeft))
+    const duration = Math.min(500, distance)
+
+    const tick = () => {
+      const time = Date.now() - startTime
+      const t = clamp(time / duration, 0, 1)
+
+      const vertical = (destTop ?? startTop) - startTop
+      const horizontal = (destLeft ?? startLeft) - startLeft
+
+      const top = vertical === 0 ? startTop : startTop + vertical * applyEasing(((destTop ?? startTop) - startTop) * t / vertical, easing)
+      const left = horizontal === 0 ? startLeft : startLeft + horizontal * applyEasing(((destLeft ?? startLeft) - startLeft) * t / horizontal, easing)
+
+      element.scrollTo({
+        top,
+        left,
+        behavior: 'instant',
+      })
+
+      if (time < duration) {
+        timer.requestAnimationFrame(tick)
+      }
+    }
+
+    timer.clearAll()
+    timer.requestAnimationFrame(tick)
+  }, [easing, element, timer])
+
+  return scrollTo
+}
+
+export const ScrollEasing = {
+  linear:         (x: number) => x,
+  easeInOutQuad:  (x: number) => x < 0.5 ? 2 * x * x : -1 + (4 - 2 * x) * x,
+  easeInOutCubic: (x: number) => x < 0.5 ? 4 * x * x * x : (x - 1) * (2 * x - 2) * (2 * x - 2) + 1,
+}
+
+function applyEasing(value: number, easing: (x: number) => number): number {
+  return easing(value)
+}
+
+export interface UseScrollToOptions {
+  easing?: (x: number) => number
 }
