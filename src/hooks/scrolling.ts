@@ -69,17 +69,28 @@ export function useScrollSync<K>() {
     onUnassign: element => element.removeEventListener('scroll', handleScroll),
   })
 
+  const timer = useTimer()
+
   const handleScroll = useCallback((event: Event) => {
     const current = event.currentTarget
     if (!(current instanceof HTMLElement)) { return }
+    if (current.hasAttribute('data-sync-scroll')) { return }
 
     const elements = refs.all()
     const others = elements.filter(it => it !== event.currentTarget)
     for (const element of others) {
+      element.setAttribute('data-sync-scroll', 'true')
+
       element.scrollTop = current.scrollTop
       element.scrollLeft = current.scrollLeft
     }
-  }, [refs])
+
+    timer.debounce(() => {
+      for (const element of others) {
+        element.removeAttribute('data-sync-scroll')
+      }
+    }, 200)
+  }, [refs, timer])
 
   return useCallback((key: K) => refs.for(key), [refs])
 }
