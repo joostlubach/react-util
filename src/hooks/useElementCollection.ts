@@ -35,7 +35,7 @@ export function useElementCollection<E extends Element>(refOrElement: Element | 
   return collection
 }
 
-export function useDescendantElement<E extends Element>(refOrElement: Element | React.RefObject<Element> | null | undefined, selector: string, options: UseElementCollectionOptions = {}): E | null {
+export function useDescendantElement<E extends Element>(refOrElement: Element | React.RefObject<Element> | null | undefined, selector: string): E | null {
   const [descendant, setDescendant] = useState<E | null>(null)
 
   useEffect(() => {
