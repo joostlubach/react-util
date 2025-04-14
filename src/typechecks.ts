@@ -1,48 +1,71 @@
 import { isFunction, isPlainObject } from 'lodash'
-import React from 'react'
+import {
+  Children,
+  ComponentType,
+  createElement,
+  Fragment,
+  isValidElement,
+  Provider,
+  ReactElement,
+  ReactNode,
+} from 'react'
 
-export function childrenOfType<P>(children: React.ReactNode, ...types: React.ComponentType<P>[]): Array<React.ReactElement<P>> {
-  const result: Array<React.ReactElement<P>> = []
+export function childrenOfType<P>(children: ReactNode, ...types: ComponentType<P>[]): Array<ReactElement<P>> {
+  return childrenMatching(children, element => {
+    if (typeof element.type === 'string') { return false }
+    return types.includes(element.type)
+  })[0]
+}
 
-  const isNodeOfType = (node: React.ReactNode) => {
-    if (!React.isValidElement(node)) { return false }
-    if (typeof node.type === 'string') { return false }
-    return types.includes(node.type)
-  }
+export function childrenNotOfType(children: ReactNode, types: ComponentType<any>[]): Array<ReactElement<any>> {
+  return childrenMatching(children, element => {
+    if (typeof element.type === 'string') { return true }
+    return !types.includes(element.type)
+  })[0]
+}
 
-  const iterate = (node: React.ReactNode) => {
-    const array = React.Children.toArray(node) as Array<React.ReactElement<any>>
+export function childrenMatching(children: ReactNode, predicate: (element: ReactElement) => boolean): [ReactElement[], ReactNode] {
+  const matching: Array<ReactElement> = []
+  const remaining: Array<ReactNode> = []
+
+  const iterate = (node: ReactNode) => {
+    const array = Children.toArray(node)
     for (const node of array) {
-      if (isNodeOfType(node)) {
-        result.push(node)
-      } else if (isReactFragment(node)) {
+      if (!isValidElement(node)) {
+        remaining.push(node)
+        continue
+      }
+
+      if (isReactFragment(node) || isReactProvider(node)) {
         iterate(node.props.children)
+      } else if (predicate(node)) {
+        matching.push(node)
+      } else {
+        remaining.push(node)
       }
     }
   }
 
   iterate(children)
-  return result
+  return [matching, remaining]
 }
 
-export function childrenNotOfType(children: React.ReactNode, types: React.ComponentType<any>[]): Array<React.ReactElement<any>> {
-  const allChildren = React.Children.toArray(children) as Array<React.ReactElement<any>>
-
-  return allChildren.filter(child => {
-    if (!React.isValidElement(child)) { return true }
-    return !types.includes((child as any).type)
-  })
-}
-
-export function isReactText(children: React.ReactNode): children is string | number {
+export function isReactText(children: ReactNode): children is string | number {
   return typeof children === 'string' || typeof children === 'number'
 }
 
-export function isReactFragment(children: React.ReactNode): children is React.ReactElement<{children?: React.ReactNode}> {
-  return React.isValidElement(children) && children.type === React.Fragment
+export function isReactFragment(children: ReactNode): children is ReactElement<{children?: ReactNode}> {
+  return isValidElement(children) && children.type === Fragment
 }
 
-export function isReactComponent<P>(arg: any): arg is React.ComponentType<P> {
+export function isReactProvider<T>(children: ReactNode): children is ReactElement<any, Provider<T>> {
+  if (!isValidElement(children)) { return false }
+  if (!isFunction(children.type)) { return false }
+
+  return false
+}
+
+export function isReactComponent<P>(arg: any): arg is ComponentType<P> {
   if (isPlainObject(arg) && arg.$$typeof != null) {
     return true
   }
@@ -53,15 +76,15 @@ export function isReactComponent<P>(arg: any): arg is React.ComponentType<P> {
   return false
 }
 
-export function renderComponentOrElement(componentOrElement: React.ComponentType<Record<string, never>> | React.ReactNode): React.ReactNode
-export function renderComponentOrElement<P>(componentOrElement: React.ComponentType<P> | React.ReactNode, propsForComponent: P): React.ReactNode
-export function renderComponentOrElement(componentOrElement: React.ComponentType<any> | React.ReactNode, propsForComponent: any = {}) {
+export function renderComponentOrElement(componentOrElement: ComponentType<Record<string, never>> | ReactNode): ReactNode
+export function renderComponentOrElement<P>(componentOrElement: ComponentType<P> | ReactNode, propsForComponent: P): ReactNode
+export function renderComponentOrElement(componentOrElement: ComponentType<any> | ReactNode, propsForComponent: any = {}) {
   if (componentOrElement == null) { return componentOrElement }
 
-  if (React.isValidElement(componentOrElement)) {
+  if (isValidElement(componentOrElement)) {
     return componentOrElement
   } else if (isReactComponent(componentOrElement)) {
-    return React.createElement(componentOrElement as React.ComponentType<any>, propsForComponent)
+    return createElement(componentOrElement as ComponentType<any>, propsForComponent)
   }
 
   throw new Error(`${componentOrElement} is not a valid React component or element`)

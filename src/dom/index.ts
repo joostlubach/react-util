@@ -1,6 +1,6 @@
 // @index(!hooks): export * from ${relpath}
 export * from './cloning'
-export * from './closest'
+export * from './related'
 export * from './focus'
 export * from './mouse'
 export * from './queries'
