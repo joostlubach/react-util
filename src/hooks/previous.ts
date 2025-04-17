@@ -4,7 +4,7 @@ import React from 'react'
  * Uses a ref to give you the previous version of a value.
  */
 export function usePrevious<T>(value: T): T | undefined {
-  const ref = React.useRef<T>()
+  const ref = React.useRef<T>(undefined as any)
   React.useEffect(() => {
     ref.current = value
   })
