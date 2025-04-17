@@ -14,7 +14,7 @@ export function childrenOfType<P>(children: ReactNode, ...types: ComponentType<P
   return childrenMatching(children, element => {
     if (typeof element.type === 'string') { return false }
     return types.includes(element.type)
-  })[0]
+  })[0] as Array<ReactElement<P>>
 }
 
 export function childrenNotOfType(children: ReactNode, types: ComponentType<any>[]): Array<ReactElement<any>> {
