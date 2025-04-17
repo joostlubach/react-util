@@ -16,7 +16,13 @@
     "test": "NODE_ENV=test DATA_ENV=test jest"
 },
   "peerDependencies": {
+<<<<<<< Updated upstream
     "react": "^18.0"
+=======
+    "mobx-react": ">=9.0.0",
+    "react": "^19.0",
+    "react-dom": "^19.0"
+>>>>>>> Stashed changes
   },
   "dependencies": {
     "lodash": "^4.17.21",
