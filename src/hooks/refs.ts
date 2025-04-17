@@ -10,8 +10,8 @@ export function assignRef<T>(ref: React.Ref<T> | null | undefined, value: T) {
   if (ref == null) { return }
 
   if (isRefObject(ref)) {
-    (ref as React.MutableRefObject<T>).current = value
-  } else {
+    (ref as React.RefObject<T>).current = value
+  } else if (typeof ref === 'function') {
     ref(value)
   }
 }
