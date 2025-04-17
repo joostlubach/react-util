@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { ForwardRefRenderFunction, PropsWithoutRef } from 'react'
 
 export function component<T extends React.ComponentType<any>>(name: string, Component: T): T {
   Object.assign(Component, {displayName: name})
