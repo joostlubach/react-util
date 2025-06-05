@@ -9,7 +9,7 @@ import { useTimer } from 'react-timer'
  * @param delay The time in milliseconds to wait before allowing the next invocation.
  * @returns A throttled version of the callback function.
  */
-export function useThrottledCallback<A extends any[]>(callback: (...args: A) => void, delay: number, deps: any[]) {
+export function useThrottledCallback<A extends any[]>(callback: (...args: A) => void, deps: any[], delay: number) {
   const timer = useTimer()
   const lastArgsRef = useRef<A | undefined>(undefined)
   
@@ -22,5 +22,6 @@ export function useThrottledCallback<A extends any[]>(callback: (...args: A) => 
 
       callback(...args)
     }, delay)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [callback, delay, timer, ...deps])
 } 
