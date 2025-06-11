@@ -12,7 +12,7 @@ import { useTimer } from 'react-timer'
 export function useThrottledCallback<A extends any[]>(callback: (...args: A) => void, deps: any[], delay: number) {
   const timer = useTimer()
   const lastArgsRef = useRef<A | undefined>(undefined)
-  
+
   return useCallback((...args: A) => {
     lastArgsRef.current = args
     
