@@ -11,7 +11,7 @@ import {
 } from 'react'
 
 export function childrenOfType<P>(children: ReactNode, ...types: ComponentType<P>[]): Array<ReactElement<P>> {
-  return childrenMatching(children, element => {
+  return childrenMatching<P>(children, element => {
     if (typeof element.type === 'string') { return false }
     return types.includes(element.type)
   })[0]
@@ -24,8 +24,8 @@ export function childrenNotOfType(children: ReactNode, types: ComponentType<any>
   })[0]
 }
 
-export function childrenMatching(children: ReactNode, predicate: (element: ReactElement) => boolean): [ReactElement[], ReactNode] {
-  const matching: Array<ReactElement> = []
+export function childrenMatching<P>(children: ReactNode, predicate: (element: ReactElement) => boolean): [ReactElement<P>[], ReactNode] {
+  const matching: Array<ReactElement<P>> = []
   const remaining: Array<ReactNode> = []
 
   const iterate = (node: ReactNode) => {
@@ -39,7 +39,7 @@ export function childrenMatching(children: ReactNode, predicate: (element: React
       if (isReactFragment(node) || isReactProvider(node)) {
         iterate(node.props.children)
       } else if (predicate(node)) {
-        matching.push(node)
+        matching.push(node as ReactElement<P>)
       } else {
         remaining.push(node)
       }
