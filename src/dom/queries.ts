@@ -10,7 +10,7 @@ export function isScrolledElement(element: Element): element is HTMLElement {
 
 const interactiveTags = ['input', 'select', 'textarea', 'button']
 
-export function isInteractiveElement(target: EventTarget | null): target is HTMLElement {
+export function isInteractiveElement(target: Element | null): target is HTMLElement {
   if (!(target instanceof HTMLElement)) { return false }
 
   const tagName = target.tagName.toLowerCase()
