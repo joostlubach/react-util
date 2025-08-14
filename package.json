@@ -16,7 +16,7 @@
     "test": "NODE_ENV=test DATA_ENV=test jest"
   },
   "peerDependencies": {
-    "react": "^19.1.1"
+    "react": "^19.1"
   },
   "dependencies": {
     "lodash": "^4.17.21",
@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "@types/lodash": "^4.17.0",
-    "@types/react": "^18.2.79",
+    "@types/react": "^19.1",
     "@types/uuid": "^9.0.8",
     "typescript": "^5.9.2"
   }
