@@ -1,7 +1,7 @@
-export function computeStyleProperty(element: Element, value: string | number | null | undefined) {
+export function computeStyleProperty(element: Element, expression: string) {
   const el = document.createElement('div')
   try {
-    el.style.height = 'var(--Datagrid-rowHeight)'
+    el.style.height = expression
     el.style.visibility = 'hidden'
     el.style.position = 'absolute'
     element.appendChild(el)
