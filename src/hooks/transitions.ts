@@ -1,7 +1,7 @@
 import { CSSProperties, useEffect, useMemo, useState } from 'react'
 import { useTimer } from 'react-timer'
 
-export function useOverflowDuringTransition(ref: React.RefObject<HTMLElement>, overflow: CSSProperties['overflow']) {
+export function useOverflowDuringTransition(ref: React.RefObject<HTMLElement | null>, overflow: CSSProperties['overflow']) {
   useEffect(() => {
     const layerControl = ref.current
     if (layerControl == null) { return }
@@ -24,7 +24,7 @@ export function useOverflowDuringTransition(ref: React.RefObject<HTMLElement>, o
 }
 
 export function useTransitionValue<E extends HTMLElement>(
-  ref: React.RefObject<E>,
+  ref: React.RefObject<E | null>,
   calculate: (element: E) => number,
   getDefault: () => number,
   interval: number = 50

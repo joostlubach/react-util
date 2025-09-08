@@ -1,33 +1,33 @@
-import { useMemo, useRef } from 'react'
+import { Ref, RefObject, useMemo, useRef } from 'react'
 import { isFunction } from 'ytil'
 
-export function useContinuousRef<T>(current: T): React.RefObject<T> {
+export function useContinuousRef<T>(current: T): RefObject<T> {
   const ref = useRef<T>(current)
   ref.current = current
   return ref
 }
 
-export function assignRef<T>(ref: React.Ref<T> | undefined, value: T) {
+export function assignRef<T>(ref: Ref<T | null> | undefined, value: T) {
   if (ref == null) { return }
 
   if (isRefObject(ref)) {
-    (ref as React.RefObject<T>).current = value
+    (ref as RefObject<T | null>).current = value
   } else if (isFunction(ref)) {
     ref(value)
   }
 }
 
-export function releaseRef<T>(ref: React.Ref<T> | null | undefined, value?: T) {
+export function releaseRef<T>(ref: Ref<T | null> | null | undefined, value?: T) {
   if (ref == null) { return }
 
-  if (value !== undefined && isRefObject(ref) && (ref as React.RefObject<T>).current !== value) {
+  if (value !== undefined && isRefObject(ref) && (ref as RefObject<T | null>).current !== value) {
     return
   }
 
   assignRef(ref, null)
 }
 
-export function isRefObject<T>(ref: React.Ref<T>): ref is React.RefObject<T> {
+export function isRefObject<T>(ref: Ref<T>): ref is RefObject<T> {
   if (ref != null && typeof ref === 'object') {
     return 'current' in ref
   } else {
