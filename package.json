@@ -31,9 +31,8 @@
     "test": "NODE_ENV=test DATA_ENV=test jest"
   },
   "peerDependencies": {
-    "mobx-react": ">=9.0.0",
-    "react": "^18.0",
-    "react-dom": "^18.0"
+    "react": "^19.1",
+    "react-dom": "^19.1"
   },
   "dependencies": {
     "lodash": "^4.17.21",
