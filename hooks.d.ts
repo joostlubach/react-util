@@ -1,1 +1,1 @@
-export * from './dist/types/hooks'
+export * from './src/hooks'

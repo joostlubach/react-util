@@ -1,14 +1,22 @@
-import React from 'react'
+import { useCallback, useMemo } from 'react'
 
-import { usePrevious } from './previous'
+const STORAGE: Storage | null = 'localStorage' in globalThis ? globalThis.localStorage : null
+const SYNC: Map<string, number> = new Map()
 
-const storage: Storage | null = 'localStorage' in globalThis ? globalThis.localStorage : null
+export function useViewState<T>(key: undefined, initialValue?: T): ViewStateHook<undefined>
+export function useViewState<T>(key: string, initialValue: T): ViewStateHook<T>
+export function useViewState<T>(key: string | undefined, initialValue?: T): ViewStateHook<T | undefined>
+export function useViewState<T>(key: string | undefined, initialValue: T): ViewStateHook<T> {
+  const sync = key === undefined ? null : SYNC.get(key)
 
-export function useViewState<T>(key: string, initialValue: T): ViewStateHook<T> {
-  const prevKey = usePrevious(key)
+  const value = useMemo(() => {
+    if (key === undefined) { return undefined }
 
-  const getValueFromStorage = React.useCallback(() => {
-    const serialized = storage?.getItem(key)
+    // Make sync end up in the deps array so that all useViewState hooks with the same key are synced and
+    // will update each other.
+    const _ = sync
+
+    const serialized = STORAGE?.getItem(key)
     if (serialized == null) { return initialValue }
 
     try {
@@ -16,38 +24,27 @@ export function useViewState<T>(key: string, initialValue: T): ViewStateHook<T> 
     } catch {
       return initialValue
     }
-  }, [initialValue, key])
-
-  const [cache, setCache] = React.useState<T | undefined>(undefined)
-
-  // The value uses the cached value if it exists, unless the key has changed. Then it uses the storage value.
-  const value = React.useMemo(
-    () => (prevKey === key ? cache : undefined) ?? getValueFromStorage(),
-    [getValueFromStorage, key, prevKey, cache],
-  )
-
-  // Reset the cached state value if the key changes.
-  React.useEffect(() => {
-    if (key !== prevKey) { setCache(value) }
-  }, [key, prevKey, value])
+  }, [initialValue, key, sync])
 
   // When setting the value, update local storage and the local cache.
-  const setValue = React.useCallback((value: T) => {
+  const setValue = useCallback((value: T) => {
+    if (key === undefined) { return }
+
     if (value === undefined) {
-      storage?.removeItem(key)
+      STORAGE?.removeItem(key)
     } else {
-      storage?.setItem(key, JSON.stringify(value))
+      STORAGE?.setItem(key, JSON.stringify(value))
     }
-    setCache(value)
+    SYNC.set(key, Date.now())
   }, [key])
 
   // When setting the value, update local storage and the local cache.
-  const deleteValue = React.useCallback(() => {
-    storage?.removeItem(key)
-    setCache(undefined)
+  const deleteValue = useCallback(() => {
+    if (key === undefined) { return }
+    STORAGE?.removeItem(key)
   }, [key])
 
-  return [value, setValue, deleteValue]
+  return [value as T, setValue, deleteValue]
 }
 
 export type ViewStateHook<T> = [

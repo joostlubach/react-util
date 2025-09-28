@@ -13,11 +13,6 @@
       "types": "./dist/types/index.d.ts",
       "import": "./dist/esm/index.js",
       "default": "./dist/cjs/index.js"
-    },
-    "./hooks": {
-      "types": "./dist/types/hooks/index.d.ts",
-      "import": "./dist/esm/hooks/index.js",
-      "default": "./dist/cjs/hooks/index.js"
     }
   },
   "scripts": {
@@ -26,9 +21,9 @@
     "build:tsc:esm": "tsc -p tsconfig.prod.json --module esnext --outDir dist/esm --declarationDir dist/types",
     "build:tsc:cjs": "tsc -p tsconfig.prod.json --module commonjs --outDir dist/cjs --declaration false --declarationMap false",
     "clean": "rimraf dist",
-    "lint": "eslint src --ext .ts,.tsx",
     "check": "tsc -p . --noEmit",
-    "test": "NODE_ENV=test jest"
+    "lint": "eslint src --ext ts,tsx",
+    "test": "NODE_ENV=test DATA_ENV=test jest"
   },
   "peerDependencies": {
     "mobx-react": ">=9.0.0",
@@ -50,8 +45,7 @@
     "copyfiles": "^2.4.1",
     "rimraf": "6.0.1",
     "tsc-alias": "^1.8.8",
-    "typescript": "5.4.3",
+    "typescript": "^5.8.3",
     "ytil": "workspace:^"
-  },
-  "packageManager": "pnpm@9.9.0"
+  }
 }

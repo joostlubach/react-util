@@ -1,32 +1,33 @@
-import React from 'react'
+import { Ref, RefObject, useMemo, useRef } from 'react'
+import { isFunction } from 'ytil'
 
-export function useContinuousRef<T>(current: T): React.MutableRefObject<T> {
-  const ref = React.useRef<T>(current)
+export function useContinuousRef<T>(current: T): RefObject<T> {
+  const ref = useRef<T>(current)
   ref.current = current
   return ref
 }
 
-export function assignRef<T>(ref: React.Ref<T> | null | undefined, value: T) {
+export function assignRef<T>(ref: Ref<T | null> | undefined, value: T) {
   if (ref == null) { return }
 
   if (isRefObject(ref)) {
-    (ref as React.MutableRefObject<T>).current = value
-  } else {
+    (ref as RefObject<T | null>).current = value
+  } else if (isFunction(ref)) {
     ref(value)
   }
 }
 
-export function releaseRef<T>(ref: React.Ref<T> | null | undefined, value?: T) {
+export function releaseRef<T>(ref: Ref<T | null> | null | undefined, value?: T) {
   if (ref == null) { return }
 
-  if (value !== undefined && isRefObject(ref) && (ref as React.MutableRefObject<T>).current !== value) {
+  if (value !== undefined && isRefObject(ref) && (ref as RefObject<T | null>).current !== value) {
     return
   }
 
   assignRef(ref, null)
 }
 
-export function isRefObject<T>(ref: React.Ref<T>): ref is React.RefObject<T> {
+export function isRefObject<T>(ref: Ref<T>): ref is RefObject<T> {
   if (ref != null && typeof ref === 'object') {
     return 'current' in ref
   } else {
@@ -34,37 +35,49 @@ export function isRefObject<T>(ref: React.Ref<T>): ref is React.RefObject<T> {
   }
 }
 
-export function useRefMap<K, V>(deps: any[] = []): RefMap<K, V> {
-  return React.useMemo((): RefMap<K, V> => {
+export function useRefMap<K, V>(callbacks: RefMapCallbacks<K, V> = {}): RefMap<K, V> {
+  const callbacksRef = useContinuousRef(callbacks)
+
+  return useMemo((): RefMap<K, V> => {
     const map = new Map<K, V>()
+    const {onAssign, onUnassign} = callbacksRef.current
+
+    const set = (key: K, value: V | null) => {
+      const current = map.get(key)
+      if (current != null) {
+        onUnassign?.(current, key)
+      }
+      if (value != null) {
+        map.set(key, value)
+      } else {
+        map.delete(key)
+      }
+      if (value != null) {
+        onAssign?.(value, key)
+      }
+    }
 
     return {
-      for: key => current => {
-        if (current == null) {
-          map.delete(key)
-        } else {
-          map.set(key, current)
-        }
+      for: key => value => {
+        set(key, value)
       },
-      set: (key, current) => {
-        if (current == null) {
-          map.delete(key)
-        } else {
-          map.set(key, current)
-        }
-      },
+      set,
       clear: () => { map.clear() },
 
       size:    () => map.size,
       get:     key => map.get(key),
       getter:  key => () => map.get(key),
+      getters: Array.from(map.keys()).map(key => () => map.get(key)),
       all:     () => [...map.values()],
       object:  () => Object.fromEntries(map.entries()),
       entries: () => [...map.entries()],
     }
-  // There is a common use case for ref maps to be invalidated based on some dependency, so allow custom deps here.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [...deps])
+  }, [callbacksRef])
+}
+
+export interface RefMapCallbacks<K, V> {
+  onAssign?:   (value: V, key: K) => any
+  onUnassign?: (value: V, key: K) => any
 }
 
 export interface RefMap<K, V> {
@@ -74,6 +87,7 @@ export interface RefMap<K, V> {
   clear:   () => void
   get:     (key: K) => V | undefined
   getter:  (key: K) => () => V | undefined
+  getters: (() => V | undefined)[]
   all:     () => V[]
   object:  () => Record<K extends string | number ? K : string, V>
   entries: () => Array<[K, V]>

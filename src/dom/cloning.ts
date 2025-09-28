@@ -5,7 +5,7 @@ export function cloneElement(element: HTMLElement): HTMLElement {
   const prefix = uuidV4().slice(0, 8)
 
   // Prefix all IDs and url(#) references within (this fixes SVG masks getting messed up).
-  for (const element of clone.querySelectorAll('[id]')) {
+  for (const element of Array.from(clone.querySelectorAll('[id]'))) {
     const id = element.getAttribute('id')
     if (id == null) { continue }
 
@@ -14,7 +14,7 @@ export function cloneElement(element: HTMLElement): HTMLElement {
 
   for (const attribute of ['style', 'mask', 'fill']) {
     const selector = `[${attribute}*="url(\\"#"]`
-    for (const element of clone.querySelectorAll(selector)) {
+    for (const element of Array.from(clone.querySelectorAll(selector))) {
       const value = element.getAttribute(attribute)
       if (value == null) { continue }
 

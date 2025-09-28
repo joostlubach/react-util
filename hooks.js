@@ -1,1 +1,1 @@
-export * from './dist/esm/hooks'
+export * from './src/hooks'
