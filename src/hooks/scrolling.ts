@@ -1,18 +1,21 @@
 import { clamp } from 'lodash'
-import { useCallback, useEffect, useState } from 'react'
+import { RefObject, useCallback, useEffect, useState } from 'react'
 import { useTimer } from 'react-timer'
 import { RefMap, useRefMap } from './refs'
 
-export function useScrollInfo(element: Element): ScrollInfo {
+export function useScrollInfo(ref: RefObject<HTMLElement | null>): ScrollInfo {
   const [scrollInfo, setScrollInfo] = useState<ScrollInfo>(
-    ScrollInfo.fromElement(element)
+    ScrollInfo.fromElement(ref.current)
   )
   
   const updateScrollInfo = useCallback(() => {
-    setScrollInfo(ScrollInfo.fromElement(element))
-  }, [element])
+    setScrollInfo(ScrollInfo.fromElement(ref.current))
+  }, [ref])
 
   useEffect(() => {
+    const element = ref.current
+    if (!element) return
+
     element.addEventListener('scroll', updateScrollInfo)
 
     const observer = new ResizeObserver(updateScrollInfo)
@@ -22,7 +25,7 @@ export function useScrollInfo(element: Element): ScrollInfo {
       element.removeEventListener('scroll', updateScrollInfo)
       observer.disconnect()
     }
-  }, [element, updateScrollInfo])
+  }, [ref, updateScrollInfo])
 
   return scrollInfo
 }
@@ -44,23 +47,41 @@ export interface ScrollInfo {
 }
 
 export const ScrollInfo = {
-  fromElement(element: Element): ScrollInfo {
-    return {
-      scrollTop:  element.scrollTop,
-      scrollLeft: element.scrollLeft,
+  fromElement(element: Element | null): ScrollInfo {
+    if (element == null) {
+      return {
+        scrollTop:  0,
+        scrollLeft: 0,
 
-      scrollHeight: element.scrollHeight,
-      scrollWidth:  element.scrollWidth,
+        scrollHeight: 0,
+        scrollWidth:  0,
 
-      clientHeight: element.clientHeight,
-      clientWidth:  element.clientWidth,
+        clientHeight: 0,
+        clientWidth:  0,
 
-      atTop:    element.scrollTop === 0,
-      atLeft:   element.scrollLeft === 0,
-      atBottom: element.scrollTop + element.clientHeight >= element.scrollHeight,
-      atRight:  element.scrollLeft + element.clientWidth >= element.scrollWidth,      
+        atTop:    true,
+        atLeft:   true,
+        atBottom: true,
+        atRight:  true,
+      }
+    } else {
+      return {
+        scrollTop:  element.scrollTop,
+        scrollLeft: element.scrollLeft,
+
+        scrollHeight: element.scrollHeight,
+        scrollWidth:  element.scrollWidth,
+
+        clientHeight: element.clientHeight,
+        clientWidth:  element.clientWidth,
+
+        atTop:    element.scrollTop === 0,
+        atLeft:   element.scrollLeft === 0,
+        atBottom: element.scrollTop + element.clientHeight >= element.scrollHeight,
+        atRight:  element.scrollLeft + element.clientWidth >= element.scrollWidth,      
+      }
     }
-  },
+  }
 }
 
 export function useScrollSync<K>() {
