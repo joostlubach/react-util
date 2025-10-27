@@ -25,7 +25,7 @@ export function memo<T extends ComponentType<any>>(
 
 export function forwardRef<T, P>(
   name: string,
-  render: ForwardRefRenderFunction<T, PropsWithoutRef<P>>
+  render: ForwardRefRenderFunction<T, PropsWithoutRef<P>>,
 ): (props: P & RefAttributes<T>) => ReactElement | null {
   const Component = react_forwardRef<T, P>(render)
   Object.assign(Component, {displayName: name})

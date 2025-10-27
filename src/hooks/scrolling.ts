@@ -5,7 +5,7 @@ import { RefMap, useRefMap } from './refs'
 
 export function useScrollInfo(ref: RefObject<HTMLElement | null>): ScrollInfo {
   const [scrollInfo, setScrollInfo] = useState<ScrollInfo>(
-    ScrollInfo.fromElement(ref.current)
+    ScrollInfo.fromElement(ref.current),
   )
   
   const updateScrollInfo = useCallback(() => {
@@ -81,7 +81,7 @@ export const ScrollInfo = {
         atRight:  element.scrollLeft + element.clientWidth >= element.scrollWidth,      
       }
     }
-  }
+  },
 }
 
 export function useScrollSync<K>() {

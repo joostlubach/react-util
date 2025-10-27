@@ -69,7 +69,7 @@ export class ElementCollection<E extends Element> {
 
   constructor(
     public readonly selector: string,
-    public readonly elements: E[]
+    public readonly elements: E[],
   ) {}
 
   public filter(predicate: (element: E) => boolean): ElementCollection<E> {

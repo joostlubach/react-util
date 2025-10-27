@@ -27,7 +27,7 @@ export function useTransitionValue<E extends HTMLElement>(
   ref: React.RefObject<E | null>,
   calculate: (element: E) => number,
   getDefault: () => number,
-  interval: number = 50
+  interval: number = 50,
 ) {
   const [value, setValue] = useState<number>(getDefault())
   const timer = useTimer()
