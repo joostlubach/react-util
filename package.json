@@ -58,7 +58,7 @@
     "js-yaml": "^4.1.0",
     "rimraf": "6.0.1",
     "tsc-alias": "^1.8.8",
-    "typescript": "^5.8.3",
+    "typescript": "^5.9.3",
     "ytil": "workspace:^"
   }
 }
