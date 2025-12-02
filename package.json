@@ -33,7 +33,7 @@
   "peerDependencies": {
     "react": "^19.1",
     "react-dom": "^19.1",
-    "mobx": ">=6.0"
+    "mobx": ">=6.15"
   },
   "dependencies": {
     "lodash": "^4.17.21",
