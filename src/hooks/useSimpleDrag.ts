@@ -4,10 +4,14 @@ import { Point } from 'ytil'
 import { getClientPoint } from '../dom'
 
 export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, config: SimpleDragConfig<S, E>) {
+  const {
+    enabled,
+    threshold = 2,
+  } = config
+
   const stateRef = useRef<S | undefined>(undefined)
   const startPointRef = useRef<Point | undefined>(undefined)
   const configRef = useContinuousRef(config)
-  const {enabled} = config
 
   const handleDrag = useCallback((event: Event) => {
     if (!(event instanceof MouseEvent) && !(event instanceof TouchEvent)) { return }
@@ -25,6 +29,10 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
       x: point.x - startPoint.x,
       y: point.y - startPoint.y,
     }
+    if (Math.abs(delta.x) < threshold && Math.abs(delta.y) < threshold) {
+      return
+    }
+
     const metrics: DragMetrics = {
       anchor: startPoint,
       extent: point,
@@ -32,7 +40,7 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
     }
 
     configRef.current.drag?.(metrics, state as S, element as E, event)
-  }, [configRef])
+  }, [configRef, threshold])
 
   const handleEnd = useCallback((event: Event) => {
     if (!(event instanceof MouseEvent) && !(event instanceof TouchEvent)) { return }
@@ -83,6 +91,8 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
 
 export interface SimpleDragConfig<S, E> {
   enabled?: boolean
+  threshold?: number
+
   start?: (element: E, event: MouseEvent | TouchEvent) => S,
   drag?:  (metrics: DragMetrics, state: S, element: E, event: MouseEvent | TouchEvent) => void
   end?:   (state: S, element: E, event: MouseEvent | TouchEvent) => void,
