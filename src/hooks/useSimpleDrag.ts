@@ -4,8 +4,8 @@ import { Point } from 'ytil'
 import { getClientPoint } from '../dom'
 
 export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, config: SimpleDragConfig<S, E>) {
-  const stateRef = useRef<S | null>(null)
-  const startPointRef = useRef<Point | null>(null)
+  const stateRef = useRef<S | undefined>(undefined)
+  const startPointRef = useRef<Point | undefined>(undefined)
   const configRef = useContinuousRef(config)
   const {enabled} = config
 
@@ -16,7 +16,7 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
     const state = stateRef.current
     const startPoint = startPointRef.current
     const element = event.currentTarget
-    if (state == null || startPoint == null) { return }
+    if (startPoint == null) { return }
 
     const point = getClientPoint(event)
     if (point == null) { return }
@@ -25,8 +25,13 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
       x: point.x - startPoint.x,
       y: point.y - startPoint.y,
     }
+    const metrics: DragMetrics = {
+      anchor: startPoint,
+      extent: point,
+      delta,
+    }
 
-    configRef.current.drag(delta, state, element as E)
+    configRef.current.drag?.(metrics, state as S, element as E, event)
   }, [configRef])
 
   const handleEnd = useCallback((event: Event) => {
@@ -35,10 +40,10 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
 
     const state = stateRef.current
     const element = event.currentTarget
-    if (state == null) { return }
+    configRef.current.end?.(state as S, element as E, event)
 
-    configRef.current.end(state, element as E)
-
+    startPointRef.current = undefined
+    stateRef.current = undefined
     document.removeEventListener('mousemove', handleDrag)
     document.removeEventListener('touchmove', handleDrag)
     document.removeEventListener('mouseup', handleEnd)
@@ -53,7 +58,7 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
     startPointRef.current = startPoint
 
     const element = event.currentTarget
-    const state = configRef.current.start(element as E)
+    const state = configRef.current.start?.(element as E, event)
     stateRef.current = state
 
     document.addEventListener('mousemove', handleDrag)
@@ -78,7 +83,14 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
 
 export interface SimpleDragConfig<S, E> {
   enabled?: boolean
-  start: (element: E) => S,
-  drag:  (delta: Point, state: S, element: E) => void
-  end:   (state: S, element: E) => void,
+  start?: (element: E, event: MouseEvent | TouchEvent) => S,
+  drag?:  (metrics: DragMetrics, state: S, element: E, event: MouseEvent | TouchEvent) => void
+  end?:   (state: S, element: E, event: MouseEvent | TouchEvent) => void,
 }
+
+export interface DragMetrics {
+  anchor: Point
+  extent: Point
+  delta: Point
+}
+
