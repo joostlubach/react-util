@@ -76,8 +76,8 @@ export function useRefMap<K, V>(callbacks: RefMapCallbacks<K, V> = {}): RefMap<K
 }
 
 export interface RefMapCallbacks<K, V> {
-  onAssign?:   (value: V, key: K) => any
-  onUnassign?: (value: V, key: K) => any
+  onAssign?:   (value: V, key: K) => void
+  onUnassign?: (value: V, key: K) => void
 }
 
 export interface RefMap<K, V> {

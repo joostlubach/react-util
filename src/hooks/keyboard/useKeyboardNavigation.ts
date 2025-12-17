@@ -8,7 +8,7 @@ import { Key, KeyboardNavigationData, KeyPath } from './types'
 export function useKeyboardNavigation<It, K extends Key = Key>(
   data:       KeyboardNavigationData<It, K>,
   keyPath:    KeyPath<K>,
-  setKeyPath: (keyPath: KeyPath<K>) => any,
+  setKeyPath: (keyPath: KeyPath<K>) => void,
   options:    KeyboardNavigationOptions<It>,
 ): UseKeyboardNavigationHook {
   const {
@@ -86,13 +86,13 @@ export function useKeyboardNavigation<It, K extends Key = Key>(
 export interface KeyboardNavigationOptions<It> {
   mode?:       KeyboardNavigationMode
   columns?:    number
-  onSelect?:   (item: It) => any
+  onSelect?:   (item: It) => void
   selectKeys?: string[]
 }
 
 export type UseKeyboardNavigationHook = [
-  (element: HTMLElement | Window | null) => any,
-  (element: HTMLElement | Window | null) => any,
+  (element: HTMLElement | Window | null) => void,
+  (element: HTMLElement | Window | null) => void,
 ]
 
 export type KeyboardNavigationMode =

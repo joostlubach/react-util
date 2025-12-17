@@ -14,7 +14,7 @@ import React from 'react'
  * @param close A callback to close the form or component.
  * @returns A tuple of `[open, current, requestClose]` where `current` is the memoized data.
  */
-export function useOpen<T>(data: T | null, close: () => any): FormOpenHook<T> {
+export function useOpen<T>(data: T | null, close: () => void): FormOpenHook<T> {
   const [open, setOpen] = React.useState<boolean>(data != null)
   const [current, setCurrent] = React.useState<T | null>(null)
 

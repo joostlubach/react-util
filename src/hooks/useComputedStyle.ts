@@ -16,7 +16,7 @@ export function useComputedStyle<E extends ComputedStyleExtract>(extract: E): Us
           output[key] = style[key]
         }
       } else {
-        for (const [key, getter] of objectEntries(extract as {[key: string]: (style: CSSStyleDeclaration) => any})) {
+        for (const [key, getter] of objectEntries(extract as {[key: string]: (style: CSSStyleDeclaration) => void})) {
           output[key] = getter(style)
         }
       }
@@ -33,12 +33,12 @@ export function useComputedStyle<E extends ComputedStyleExtract>(extract: E): Us
 
 export type ComputedStyleExtract =
   | Array<keyof CSSStyleDeclaration>
-  | {[key: string]: (style: CSSStyleDeclaration) => any}
+  | {[key: string]: (style: CSSStyleDeclaration) => void}
 
 export type ComputedStyleOutput<E extends ComputedStyleExtract> = 
   E extends Array<infer K extends keyof CSSStyleDeclaration> ? {
     [key in K]: CSSStyleDeclaration[key]
-  } : E extends {[key: string]: (style: CSSStyleDeclaration) => any} ? {
+  } : E extends {[key: string]: (style: CSSStyleDeclaration) => void} ? {
     [key in keyof E]: ReturnType<E[key]>
   } : never
 

@@ -1,7 +1,7 @@
 import { isEqual } from 'lodash'
 import React from 'react'
 
-export function useChangeMonitor<T>(arg: T, callback: (prev: T) => any, options: ChangeMonitorOptions<T> = {}): boolean {
+export function useChangeMonitor<T>(arg: T, callback: (prev: T) => void, options: ChangeMonitorOptions<T> = {}): boolean {
   const {equals = isEqual} = options
 
   const prevRef = React.useRef<T | undefined>(undefined)

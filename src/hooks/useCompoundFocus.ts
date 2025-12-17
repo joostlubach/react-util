@@ -95,22 +95,22 @@ export function useCompoundFocus<K extends string>(refs: RefMap<K, HTMLInputElem
 export interface CompoundFocusOptions {
   selectOnFocus?: boolean
 
-  onFocus?: (event: React.FocusEvent<HTMLInputElement>) => any
-  onBlur?:  (event: React.FocusEvent<HTMLInputElement>) => any
+  onFocus?: (event: React.FocusEvent<HTMLInputElement>) => void
+  onBlur?:  (event: React.FocusEvent<HTMLInputElement>) => void
 
-  onComponentFocus?: (event: React.FocusEvent<HTMLInputElement>) => any
-  onComponentBlur?:  (event: React.FocusEvent<HTMLInputElement>) => any
+  onComponentFocus?: (event: React.FocusEvent<HTMLInputElement>) => void
+  onComponentBlur?:  (event: React.FocusEvent<HTMLInputElement>) => void
 }
 
 export interface CompoundFocusHook<K> {
   focused: K | null
 
-  focus:       (which?: K) => any
-  blur:        (which?: K) => any
-  preventBlur: (which?: K) => any
+  focus:       (which?: K) => void
+  blur:        (which?: K) => void
+  preventBlur: (which?: K) => void
 
   handlers: {
-    onFocus: (event: React.FocusEvent<HTMLInputElement>) => any
-    onBlur:  (event: React.FocusEvent<HTMLInputElement>) => any
+    onFocus: (event: React.FocusEvent<HTMLInputElement>) => void
+    onBlur:  (event: React.FocusEvent<HTMLInputElement>) => void
   }
 }

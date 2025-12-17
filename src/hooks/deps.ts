@@ -12,7 +12,7 @@ import { useContinuousRef } from './refs'
  * Make sure to canonize the deps array, e.g. sorting object keys alphabetically to avoid unnecessary
  * re-renders.
  */
-export function useWithStableDeps<T>(value: T, valueToDeps: ((value: T) => any[]) = defaultValueToDeps) {
+export function useWithStableDeps<T>(value: T, valueToDeps: ((value: T) => unknown[]) = defaultValueToDeps) {
   const currentValueRef = useContinuousRef(value)
   const deps = valueToDeps(value)
 
