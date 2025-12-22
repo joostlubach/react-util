@@ -1,7 +1,7 @@
 import { RefObject, useCallback, useEffect, useRef } from 'react'
-import { useContinuousRef } from 'react-util/hooks'
 import { Point } from 'ytil'
 import { getClientPoint } from '../dom'
+import { useContinuousRef } from './refs'
 
 export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, config: SimpleDragConfig<S, E>) {
   const {
