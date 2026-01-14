@@ -1,20 +1,13 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useState } from 'react'
 
 const STORAGE: Storage | null = 'localStorage' in globalThis ? globalThis.localStorage : null
-const SYNC: Map<string, number> = new Map()
 
 export function useViewState<T>(key: undefined, initialValue?: T): ViewStateHook<undefined>
 export function useViewState<T>(key: string, initialValue: T): ViewStateHook<T>
 export function useViewState<T>(key: string | undefined, initialValue?: T): ViewStateHook<T | undefined>
 export function useViewState<T>(key: string | undefined, initialValue: T): ViewStateHook<T> {
-  const sync = key === undefined ? null : SYNC.get(key)
-
-  const value = useMemo(() => {
-    if (key === undefined) { return undefined }
-
-    // Make sync end up in the deps array so that all useViewState hooks with the same key are synced and
-    // will update each other.
-    const _ = sync
+  const [value, setValueState] = useState<T | undefined>(() => {
+    if (key === undefined) { return initialValue }
 
     const serialized = STORAGE?.getItem(key)
     if (serialized == null) { return initialValue }
@@ -24,7 +17,7 @@ export function useViewState<T>(key: string | undefined, initialValue: T): ViewS
     } catch {
       return initialValue
     }
-  }, [initialValue, key, sync])
+  })
 
   // When setting the value, update local storage and the local cache.
   const setValue = useCallback((value: T) => {
@@ -35,13 +28,14 @@ export function useViewState<T>(key: string | undefined, initialValue: T): ViewS
     } else {
       STORAGE?.setItem(key, JSON.stringify(value))
     }
-    SYNC.set(key, Date.now())
+    setValueState(value)
   }, [key])
 
   // When setting the value, update local storage and the local cache.
   const deleteValue = useCallback(() => {
     if (key === undefined) { return }
     STORAGE?.removeItem(key)
+    setValueState(undefined)
   }, [key])
 
   return [value as T, setValue, deleteValue]
