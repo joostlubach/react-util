@@ -12,8 +12,9 @@ export function findFocusablesIn(container: Element, options: FocusInContainerOp
     autofocus = false,
   } = options
 
-  let focusables = Array.from(container.querySelectorAll(selector))
-    .filter(it => it instanceof HTMLElement) as HTMLElement[]
+  let focusables = Array
+    .from(container.querySelectorAll(selector))
+    .filter(it => it instanceof HTMLElement)
 
   if (autofocus) {
     focusables = focusables.filter(it => it.autofocus)
@@ -26,23 +27,25 @@ function focusFirstOrLast(container: Element, first: boolean, options: FocusInCo
   const {
     default: _default = true,
     select = false,
+    preventScroll,
+    ...rest
   } = options
 
   if (_default && container.contains(document.activeElement)) {
-    return false
+    return null
   }
 
   const focusables = findFocusablesIn(container, options)
-  if (focusables.length === 0) { return false }
+  if (focusables.length === 0) { return null }
 
   const focusable = first ? focusables[0] : focusables[focusables.length - 1]
 
-  focusable.focus()
+  focusable.focus({preventScroll})
   if (select && focusable instanceof HTMLInputElement) {
     focusable.select()
   }
 
-  return true
+  return focusable
 }
 
 export function focusableSelectors(options: FocusableSelectorOptions = {}) {
@@ -102,7 +105,7 @@ export interface FindFocusableOptions extends FocusableSelectorOptions {
   autofocus?: boolean
 }
 
-export interface FocusInContainerOptions extends FindFocusableOptions {
+export interface FocusInContainerOptions extends FindFocusableOptions, FocusOptions {
   /**
    * Select on focus (input elements only)?
    */
