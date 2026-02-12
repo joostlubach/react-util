@@ -1,116 +1,71 @@
-import React from 'react'
+import { RefObject, useCallback, useEffect, useRef } from 'react'
 import { useTimer } from 'react-timer'
-import { RefMap } from './refs'
+import { findFocusablesIn } from '../dom'
+import { useContinuousRef } from './refs'
 
-export function useCompoundFocus<K extends string>(refs: RefMap<K, HTMLInputElement>, options: CompoundFocusOptions = {}): CompoundFocusHook<K> {
-  const findWhich = React.useCallback((element: Element | null) => {
-    return refs.entries().find(entry => entry[1] === element)?.[0] ?? null
-  }, [refs])
-
-  const [focused, setFocused] = React.useState<K | null>(findWhich(document.activeElement))
-
-  // ------
-  // Blur prevention
-
-  const preventBlurTimer = useTimer()
-  const preventBlurRef = React.useRef<boolean>(false)
+export function useCompoundFocus(containerRef: RefObject<HTMLElement | null>, options: CompoundFocusOptions = {}) {
+  const {
+    onFocus,
+    onBlur,
+    onComponentFocus,
+    onComponentBlur,
+  } = options
+  
   const focusTimer = useTimer()
+  const onFocusRef = useContinuousRef(onFocus)
+  const onBlurRef = useContinuousRef(onBlur)
+  const onComponentFocusRef = useContinuousRef(onComponentFocus)
+  const onComponentBlurRef = useContinuousRef(onComponentBlur)
 
-  const preventBlur = React.useCallback(() => {
-    preventBlurRef.current = true
-    preventBlurTimer.debounce(() => {
-      preventBlurRef.current = false
-    }, 0)
-  }, [preventBlurTimer])
+  const prevActiveElementRef = useRef<HTMLElement | null>(
+    document.activeElement instanceof HTMLElement ? document.activeElement : null,
+  )
+
+  const findFocusables = useCallback(() => {
+    if (containerRef.current == null) { return [] }
+    return findFocusablesIn(containerRef.current)
+  }, [containerRef])
 
   // ------
   // Focus / blur handler
 
-  const focus = React.useCallback((which?: K) => {
-    const key = which ?? refs.entries()[0]?.[0]
-    const element = refs.get(key)
-    if (element == null) { return }
-
-    element.focus()
-    if (options.selectOnFocus) {
-      element.select()
-      setTimeout(() => {
-        element.select()
-      }, 0)
-    }
-
-    preventBlur()
-  }, [options.selectOnFocus, preventBlur, refs])
-
-  const blur = React.useCallback(() => {
-    if (focused == null) { return }
-
-    refs.all().forEach(el => el.blur())
-  }, [focused, refs])
-
-  const handleFocus = React.useCallback((event: React.FocusEvent<HTMLInputElement>) => {
+  const handleFocus = useCallback((event: FocusEvent) => {
     focusTimer.clearAll()
-    if (options.selectOnFocus) {
-      event.currentTarget.select()
-    }
 
-    const which = findWhich(event.target)
-    if (focused === which) { return }
+    onComponentFocusRef.current?.(event)
 
-    const wasFocused = focused != null
-    setFocused(which)
-
-    options.onComponentFocus?.(event)
+    const focusables = findFocusables()
+    const wasFocused = prevActiveElementRef.current != null && focusables.includes(prevActiveElementRef.current)
     if (!wasFocused) {
-      options.onFocus?.(event)
+      onFocusRef.current?.(event)
     }
-  }, [findWhich, focusTimer, focused, options])
+  }, [findFocusables, focusTimer, onComponentFocusRef, onFocusRef])
 
-  const handleBlur = React.useCallback((event: React.FocusEvent<HTMLInputElement>) => {
-    if (preventBlurRef.current) {
-      event.target.focus()
-    } else {
-      options.onComponentBlur?.(event)
+  const handleBlur = useCallback((event: FocusEvent) => {
+    onComponentBlurRef.current?.(event)
+    focusTimer.debounce(() => {
+      onBlurRef.current?.(event)
+    }, 0)
+  }, [focusTimer, onBlurRef, onComponentBlurRef])
 
-      event.persist()
-      focusTimer.debounce(() => {
-        setFocused(null)
-        options.onBlur?.(event)
-      }, 0)
+  useEffect(() => {
+    const container = containerRef.current
+    if (container == null) { return }
+
+    container.addEventListener('focusin', handleFocus)
+    container.addEventListener('focusout', handleBlur)
+
+    return () => {
+      container.removeEventListener('focusin', handleFocus)
+      container.removeEventListener('focusout', handleBlur)
     }
-  }, [focusTimer, options])
-
-  return {
-    focused,
-    focus,
-    blur,
-    preventBlur,
-    handlers: {
-      onFocus: handleFocus,
-      onBlur:  handleBlur,
-    },
-  }
+  }, [containerRef, handleBlur, handleFocus])
 }
 
 export interface CompoundFocusOptions {
-  selectOnFocus?: boolean
+  onFocus?: (event: FocusEvent) => void
+  onBlur?:  (event: FocusEvent) => void
 
-  onFocus?: (event: React.FocusEvent<HTMLInputElement>) => void
-  onBlur?:  (event: React.FocusEvent<HTMLInputElement>) => void
-
-  onComponentFocus?: (event: React.FocusEvent<HTMLInputElement>) => void
-  onComponentBlur?:  (event: React.FocusEvent<HTMLInputElement>) => void
-}
-
-export interface CompoundFocusHook<K> {
-  focused: K | null
-
-  focus:       (which?: K) => void
-  blur:        (which?: K) => void
-  preventBlur: (which?: K) => void
-
-  handlers: {
-    onFocus: (event: React.FocusEvent<HTMLInputElement>) => void
-    onBlur:  (event: React.FocusEvent<HTMLInputElement>) => void
-  }
+  onComponentFocus?: (event: FocusEvent) => void
+  onComponentBlur?:  (event: FocusEvent) => void
 }

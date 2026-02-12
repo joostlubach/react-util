@@ -9,18 +9,23 @@ export function focusLast(container: Element, options: FocusInContainerOptions =
 export function findFocusablesIn(container: Element, options: FocusInContainerOptions = {}) {
   const {
     selector = focusableSelectors(options).join(', '),
-    autofocus = false,
+    autofocus = 'preferred',
   } = options
 
-  let focusables = Array
+  const all = Array
     .from(container.querySelectorAll(selector))
     .filter(it => it instanceof HTMLElement)
 
-  if (autofocus) {
-    focusables = focusables.filter(it => it.autofocus)
+  if (!autofocus) {
+    return all
+  } else if (autofocus === true) {
+    return all.filter(it => it.autofocus)
+  } else {
+    return [
+      ...all.filter(it => it.autofocus),
+      ...all.filter(it => !it.autofocus),
+    ]
   }
-
-  return focusables
 }
 
 function focusFirstOrLast(container: Element, first: boolean, options: FocusInContainerOptions = {}) {
@@ -28,7 +33,6 @@ function focusFirstOrLast(container: Element, first: boolean, options: FocusInCo
     default: _default = true,
     select = false,
     preventScroll,
-    ...rest
   } = options
 
   if (_default && container.contains(document.activeElement)) {
@@ -100,9 +104,10 @@ export interface FindFocusableOptions extends FocusableSelectorOptions {
   selector?: string
 
   /**
-   * Set to `true` to exclude all elements that don't have an `autofocus` attribute.
+   * Set to `true` to exclude all elements that don't have an `autofocus` attribute. Set to `'preferred'` to first
+   * find an autofocus element, and if it was not found, fall back to finding any focusable element.
    */
-  autofocus?: boolean
+  autofocus?: boolean | 'preferred'
 }
 
 export interface FocusInContainerOptions extends FindFocusableOptions, FocusOptions {
