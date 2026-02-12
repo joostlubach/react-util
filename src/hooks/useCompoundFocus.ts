@@ -1,5 +1,4 @@
-import { RefObject, useCallback, useEffect, useRef } from 'react'
-import { useTimer } from 'react-timer'
+import { RefObject, useCallback, useEffect } from 'react'
 import { findFocusablesIn } from '../dom'
 import { useContinuousRef } from './refs'
 
@@ -11,15 +10,10 @@ export function useCompoundFocus(containerRef: RefObject<HTMLElement | null>, op
     onComponentBlur,
   } = options
   
-  const focusTimer = useTimer()
   const onFocusRef = useContinuousRef(onFocus)
   const onBlurRef = useContinuousRef(onBlur)
   const onComponentFocusRef = useContinuousRef(onComponentFocus)
   const onComponentBlurRef = useContinuousRef(onComponentBlur)
-
-  const prevActiveElementRef = useRef<HTMLElement | null>(
-    document.activeElement instanceof HTMLElement ? document.activeElement : null,
-  )
 
   const findFocusables = useCallback(() => {
     if (containerRef.current == null) { return [] }
@@ -29,24 +23,32 @@ export function useCompoundFocus(containerRef: RefObject<HTMLElement | null>, op
   // ------
   // Focus / blur handler
 
-  const handleFocus = useCallback((event: FocusEvent) => {
-    focusTimer.clearAll()
-
-    onComponentFocusRef.current?.(event)
-
+  const isCompoundFocusOrBlur = useCallback((event: FocusEvent) => {
+    if (event.relatedTarget == null) { return true }
+    
     const focusables = findFocusables()
-    const wasFocused = prevActiveElementRef.current != null && focusables.includes(prevActiveElementRef.current)
-    if (!wasFocused) {
+    return !focusables.includes(event.relatedTarget as HTMLElement)    
+  }, [findFocusables])
+
+  const handleFocus = useCallback((event: FocusEvent) => {
+    onComponentFocusRef.current?.(event)
+    if (isCompoundFocusOrBlur(event)) {
       onFocusRef.current?.(event)
     }
-  }, [findFocusables, focusTimer, onComponentFocusRef, onFocusRef])
+  }, [isCompoundFocusOrBlur, onComponentFocusRef, onFocusRef])
 
   const handleBlur = useCallback((event: FocusEvent) => {
+    if (event.target instanceof Element && event.relatedTarget instanceof Element) {
+      if (options.isRelatedTarget?.(event.target, event.relatedTarget)) {
+        return
+      }
+    }
+
     onComponentBlurRef.current?.(event)
-    focusTimer.debounce(() => {
+    if (isCompoundFocusOrBlur(event)) {
       onBlurRef.current?.(event)
-    }, 0)
-  }, [focusTimer, onBlurRef, onComponentBlurRef])
+    }
+  }, [onComponentBlurRef, isCompoundFocusOrBlur, options, onBlurRef])
 
   useEffect(() => {
     const container = containerRef.current
@@ -68,4 +70,6 @@ export interface CompoundFocusOptions {
 
   onComponentFocus?: (event: FocusEvent) => void
   onComponentBlur?:  (event: FocusEvent) => void
+
+  isRelatedTarget?: (input: Element, target: Element) => boolean
 }
