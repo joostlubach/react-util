@@ -1,11 +1,12 @@
 import React from 'react'
 import { memo } from './component'
 
-export function createSuperContainer<P>(...wrappers: SuperContainerWrapper<P>[]): React.ComponentType<SuperContainerProps<P>> {
+export function createSuperContainer<P>(...wrappers: Array<SuperContainerWrapper<P> | undefined | false>): React.ComponentType<SuperContainerProps<P>> {
   return memo('SuperContainer', (props: SuperContainerProps<P>) => {
     const {children, ...params} = props
     let current = children
     for (const wrapper of [...wrappers].reverse()) {
+      if (!wrapper) { continue }
       current = wrapper({children: current}, params as any)
     }
     return React.createElement(React.Fragment, {}, current)
