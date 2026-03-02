@@ -7,7 +7,11 @@ export function createSuperContainer<P>(...wrappers: Array<SuperContainerWrapper
     let current = children
     for (const wrapper of [...wrappers].reverse()) {
       if (!wrapper) { continue }
-      current = wrapper({children: current}, params as any)
+
+      const next = wrapper({children: current}, params as any)
+      if (!next) { continue }
+
+      current = next
     }
     return React.createElement(React.Fragment, {}, current)
   })
