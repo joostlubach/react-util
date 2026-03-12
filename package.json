@@ -28,7 +28,7 @@
     "clean": "rimraf dist",
     "check": "tsc -p . --noEmit",
     "lint": "eslint",
-    "test": "NODE_ENV=test DATA_ENV=test jest"
+    "test": "vitest"
   },
   "peerDependencies": {
     "react": "^19.1",
