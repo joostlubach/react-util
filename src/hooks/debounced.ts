@@ -6,8 +6,7 @@ export function useDebounced<T>(actual: T, debounce: number): T {
   const timer = useTimer()
 
   React.useEffect(() => {
-    timer.clearAll()
-    timer.setTimeout(() => {
+    timer.debounce(() => {
       setValue(actual)
     }, debounce)
   }, [actual, debounce, timer, value])
