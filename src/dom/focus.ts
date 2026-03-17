@@ -32,7 +32,7 @@ function focusFirstOrLast(container: Element, first: boolean, options: FocusInCo
   const {
     default: _default = true,
     select = false,
-    preventScroll,
+    ...rest
   } = options
 
   if (_default && container.contains(document.activeElement)) {
@@ -44,7 +44,7 @@ function focusFirstOrLast(container: Element, first: boolean, options: FocusInCo
 
   const focusable = first ? focusables[0] : focusables[focusables.length - 1]
 
-  focusable.focus({preventScroll})
+  focusable.focus(rest)
   if (select && focusable instanceof HTMLInputElement) {
     focusable.select()
   }
@@ -120,11 +120,16 @@ export interface FocusInContainerOptions extends FindFocusableOptions, FocusOpti
    * Only perform the focus if no other element within the container is focused (default: true).
    */
   default?: boolean
+
+  /**
+   * Pretty much supported everywhere and doesn't cause any issues, but can be set to `true` to prevent scrolling the element into view when focusing it.
+   */
+  focusVisible?: boolean
 }
 
 const SELECTORS = {
   focusable: ['button', 'input', 'select', 'textarea', '[tabindex]', '[href]'],
-  fields:    ['input:not([type="button"]):not([type="submit"])', 'select', 'textarea'],
+  fields:    ['input:not([type="button"]):not([type="submit"])', 'select', 'textarea', '.--field-like'],
   buttons:   ['input:[type="button"], input[type="submit"]', 'button'],
   exclude:   ['[disabled], [tabindex="-1"]'],
 }
