@@ -19,11 +19,11 @@ export function findFocusablesIn(container: Element, options: FocusInContainerOp
   if (!autofocus) {
     return all
   } else if (autofocus === true) {
-    return all.filter(it => it.autofocus)
+    return all.filter(it => it.autofocus || it.getAttribute('data-autofocus') === 'true')
   } else {
     return [
-      ...all.filter(it => it.autofocus),
-      ...all.filter(it => !it.autofocus),
+      ...all.filter(it => it.autofocus || it.getAttribute('data-autofocus') === 'true'),
+      ...all.filter(it => !(it.autofocus || it.getAttribute('data-autofocus') === 'true')),
     ]
   }
 }
