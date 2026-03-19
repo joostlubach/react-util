@@ -10,41 +10,67 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
   } = config
 
   const stateRef = useRef<S | undefined>(undefined)
-  const startPointRef = useRef<Point | undefined>(undefined)
+  const anchorRef = useRef<Point | undefined>(undefined)
   const configRef = useContinuousRef(config)
   const origCursorRef = useRef<CSSProperties['cursor'] | undefined>(undefined)
 
+  const makeRelative = useCallback((point: Point) => {
+    const element = ref.current
+    if (element == null) { return point }
+
+    const rect = element.getBoundingClientRect()
+    return {
+      x: point.x - rect.left,
+      y: point.y - rect.top,
+    }
+  }, [ref])
+
   const handleDrag = useCallback((event: Event) => {
-    if (!(event instanceof MouseEvent) && !(event instanceof TouchEvent)) { return }
+    if (!(event instanceof PointerEvent)) { return }
     event.preventDefault()
 
     const state = stateRef.current
-    const startPoint = startPointRef.current
+    const anchor = anchorRef.current
     const element = event.currentTarget
-    if (startPoint == null) { return }
+    if (anchor == null) { return }
 
     const point = getClientPoint(event)
     if (point == null) { return }
 
     const delta = {
-      x: point.x - startPoint.x,
-      y: point.y - startPoint.y,
+      x: point.x - anchor.x,
+      y: point.y - anchor.y,
     }
     if (Math.abs(delta.x) < threshold && Math.abs(delta.y) < threshold) {
       return
     }
 
+    const extent = makeRelative(point)
     const metrics: DragMetrics = {
-      anchor: startPoint,
-      extent: point,
+      anchor,
+      extent,
       delta,
     }
 
     configRef.current.drag?.(metrics, state as S, element as E, event)
-  }, [configRef, threshold])
+  }, [configRef, makeRelative, threshold])
+
+  const handleMove = useCallback((event: Event) => {
+    if (!(event instanceof PointerEvent)) { return }
+    event.preventDefault()
+
+    const anchor = anchorRef.current
+    const element = event.currentTarget
+    if (anchor != null) { return }
+
+    const point = getClientPoint(event)
+    if (point == null) { return }
+
+    configRef.current.move?.(makeRelative(point), element as E, event)
+  }, [configRef, makeRelative])
 
   const handleEnd = useCallback((event: Event) => {
-    if (!(event instanceof MouseEvent) && !(event instanceof TouchEvent)) { return }
+    if (!(event instanceof PointerEvent)) { return }
     event.preventDefault()
 
     const state = stateRef.current
@@ -56,24 +82,36 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
       origCursorRef.current = undefined
     }
 
-    startPointRef.current = undefined
+    const anchor = anchorRef.current
+    const point = getClientPoint(event)
+    if (anchor != null && point != null) {
+      const delta = {
+        x: point.x - anchor.x,
+        y: point.y - anchor.y,
+      }
+
+      const extent = makeRelative(point)
+      if (Math.abs(delta.x) < threshold && Math.abs(delta.y) < threshold) {
+        configRef.current.click?.(extent, element as E, event)
+      }
+    }
+
+    anchorRef.current = undefined
     stateRef.current = undefined
-    document.removeEventListener('mousemove', handleDrag)
-    document.removeEventListener('touchmove', handleDrag)
-    document.removeEventListener('mouseup', handleEnd)
-    document.removeEventListener('touchend', handleEnd)
-  }, [configRef, handleDrag])
+    document.removeEventListener('pointermove', handleDrag)
+    document.removeEventListener('pointerup', handleEnd)
+  }, [configRef, handleDrag, makeRelative, threshold])
 
   const handleStart = useCallback((event: Event) => {
-    if (!(event instanceof MouseEvent) && !(event instanceof TouchEvent)) { return }
+    if (!(event instanceof PointerEvent)) { return }
     event.preventDefault()
 
-    const startPoint = getClientPoint(event)
-    if (startPoint == null) { return }
-    startPointRef.current = startPoint
-
+    const anchor = getClientPoint(event)
+    if (anchor == null) { return }
+    anchorRef.current = anchor
+    
     const element = event.currentTarget
-    const state = configRef.current.start?.(element as E, event)
+    const state = configRef.current.start?.(makeRelative(anchor), element as E, event)
     stateRef.current = state
 
     if (config.cursor != null) {
@@ -83,7 +121,15 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
 
     document.addEventListener('pointermove', handleDrag)
     document.addEventListener('pointerup', handleEnd)
-  }, [config.cursor, configRef, handleDrag, handleEnd])
+  }, [config.cursor, configRef, handleDrag, handleEnd, makeRelative])
+
+  const handleLeave = useCallback((event: Event) => {
+    if (!(event instanceof PointerEvent)) { return }
+    event.preventDefault()
+
+    const element = event.currentTarget
+    configRef.current.leave?.(element as E, event)
+  }, [configRef])
 
   useEffect(() => {
     const element = ref.current
@@ -91,10 +137,22 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
     if (!enabled) { return }
 
     element.addEventListener('pointerdown', handleStart)
+    if (config.move != null) {
+      element.addEventListener('pointermove', handleMove)
+    }
+    if (config.leave != null) {
+      element.addEventListener('pointerleave', handleLeave)
+    }
     return () => {
       element.removeEventListener('pointerdown', handleStart)
+      if (config.move != null) {
+        element.removeEventListener('pointermove', handleMove)
+      }
+      if (config.leave != null) {
+        element.removeEventListener('pointerleave', handleLeave)
+      }
     }
-  }, [enabled, handleStart, ref])
+  }, [config.leave, config.move, configRef, enabled, handleLeave, handleMove, handleStart, ref])
 }
 
 export interface SimpleDragConfig<S, E> {
@@ -102,9 +160,13 @@ export interface SimpleDragConfig<S, E> {
   threshold?: number
   cursor?: CSSProperties['cursor']
 
-  start?: (element: E, event: MouseEvent | TouchEvent) => S,
-  drag?:  (metrics: DragMetrics, state: S, element: E, event: MouseEvent | TouchEvent) => void
-  end?:   (state: S, element: E, event: MouseEvent | TouchEvent) => void,
+  start?: (point: Point, element: E, event: PointerEvent | TouchEvent) => S
+  drag?:  (metrics: DragMetrics, state: S, element: E, event: PointerEvent | TouchEvent) => void
+  end?:   (state: S, element: E, event: PointerEvent | TouchEvent) => void
+
+  click?: (point: Point, element: E, event: PointerEvent | TouchEvent) => void
+  move?: (point: Point, element: E, event: PointerEvent | TouchEvent) => void
+  leave?: (element: E, event: PointerEvent | TouchEvent) => void,
 }
 
 export interface DragMetrics {

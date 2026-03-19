@@ -1,7 +1,7 @@
 import { Point } from 'ytil'
 
-export function getClientPoint(event: MouseEvent | TouchEvent): Point | null {
-  if (event instanceof MouseEvent) {
+export function getClientPoint(event: MouseEvent | TouchEvent | PointerEvent): Point | null {
+  if (event instanceof MouseEvent || event instanceof PointerEvent) {
     return {
       x: event.clientX,
       y: event.clientY,
