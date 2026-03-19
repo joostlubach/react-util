@@ -1,17 +1,18 @@
-import { RefObject, useCallback, useEffect, useRef } from 'react'
+import { CSSProperties, RefObject, useCallback, useEffect, useRef } from 'react'
 import { Point } from 'ytil'
 import { getClientPoint } from '../dom'
 import { useContinuousRef } from './refs'
 
 export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, config: SimpleDragConfig<S, E>) {
   const {
-    enabled,
+    enabled = true,
     threshold = 2,
   } = config
 
   const stateRef = useRef<S | undefined>(undefined)
   const startPointRef = useRef<Point | undefined>(undefined)
   const configRef = useContinuousRef(config)
+  const origCursorRef = useRef<CSSProperties['cursor'] | undefined>(undefined)
 
   const handleDrag = useCallback((event: Event) => {
     if (!(event instanceof MouseEvent) && !(event instanceof TouchEvent)) { return }
@@ -50,6 +51,11 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
     const element = event.currentTarget
     configRef.current.end?.(state as S, element as E, event)
 
+    if (origCursorRef.current != null) {
+      document.body.style.cursor = origCursorRef.current
+      origCursorRef.current = undefined
+    }
+
     startPointRef.current = undefined
     stateRef.current = undefined
     document.removeEventListener('mousemove', handleDrag)
@@ -60,6 +66,7 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
 
   const handleStart = useCallback((event: Event) => {
     if (!(event instanceof MouseEvent) && !(event instanceof TouchEvent)) { return }
+    event.preventDefault()
 
     const startPoint = getClientPoint(event)
     if (startPoint == null) { return }
@@ -69,22 +76,23 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
     const state = configRef.current.start?.(element as E, event)
     stateRef.current = state
 
-    document.addEventListener('mousemove', handleDrag)
-    document.addEventListener('touchmove', handleDrag)
-    document.addEventListener('mouseup', handleEnd)
-    document.addEventListener('touchend', handleEnd)
-  }, [configRef, handleDrag, handleEnd])
+    if (config.cursor != null) {
+      origCursorRef.current = document.body.style.cursor
+      document.body.style.cursor = config.cursor
+    }
+
+    document.addEventListener('pointermove', handleDrag)
+    document.addEventListener('pointerup', handleEnd)
+  }, [config.cursor, configRef, handleDrag, handleEnd])
 
   useEffect(() => {
     const element = ref.current
     if (element == null) { return }
     if (!enabled) { return }
 
-    element.addEventListener('mousedown', handleStart)
-    element.addEventListener('touchstart', handleStart)
+    element.addEventListener('pointerdown', handleStart)
     return () => {
-      element.removeEventListener('mousedown', handleStart)
-      element.removeEventListener('touchstart', handleStart)
+      element.removeEventListener('pointerdown', handleStart)
     }
   }, [enabled, handleStart, ref])
 }
@@ -92,6 +100,7 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
 export interface SimpleDragConfig<S, E> {
   enabled?: boolean
   threshold?: number
+  cursor?: CSSProperties['cursor']
 
   start?: (element: E, event: MouseEvent | TouchEvent) => S,
   drag?:  (metrics: DragMetrics, state: S, element: E, event: MouseEvent | TouchEvent) => void
