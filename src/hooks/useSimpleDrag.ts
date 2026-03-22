@@ -75,7 +75,8 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
 
     const state = stateRef.current
     const element = event.currentTarget
-    configRef.current.end?.(state as S, element as E, event)
+    const point = getClientPoint(event)
+    if (point == null) { return }
 
     if (origCursorRef.current != null) {
       document.body.style.cursor = origCursorRef.current
@@ -83,7 +84,6 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
     }
 
     const anchor = anchorRef.current
-    const point = getClientPoint(event)
     if (anchor != null && point != null) {
       const delta = {
         x: point.x - anchor.x,
@@ -93,6 +93,12 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
       const extent = makeRelative(point)
       if (Math.abs(delta.x) < threshold && Math.abs(delta.y) < threshold) {
         configRef.current.click?.(extent, element as E, event)
+      } else {
+        configRef.current.end?.({
+          anchor: makeRelative(anchor),
+          extent,
+          delta,
+        }, state as S, element as E, event)
       }
     }
 
@@ -129,7 +135,16 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
 
     const element = event.currentTarget
     configRef.current.leave?.(element as E, event)
-  }, [configRef])
+
+    stateRef.current = undefined
+    anchorRef.current = undefined
+    if (origCursorRef.current != null) {
+      document.body.style.cursor = origCursorRef.current
+      origCursorRef.current = undefined
+    }
+    document.removeEventListener('pointermove', handleDrag)
+    document.removeEventListener('pointerup', handleEnd)
+  }, [configRef, handleDrag, handleEnd])
 
   useEffect(() => {
     const element = ref.current
@@ -162,7 +177,7 @@ export interface SimpleDragConfig<S, E> {
 
   start?: (point: Point, element: E, event: PointerEvent | TouchEvent) => S
   drag?:  (metrics: DragMetrics, state: S, element: E, event: PointerEvent | TouchEvent) => void
-  end?:   (state: S, element: E, event: PointerEvent | TouchEvent) => void
+  end?:   (metrics: DragMetrics, state: S, element: E, event: PointerEvent | TouchEvent) => void
 
   click?: (point: Point, element: E, event: PointerEvent | TouchEvent) => void
   move?: (point: Point, element: E, event: PointerEvent | TouchEvent) => void
