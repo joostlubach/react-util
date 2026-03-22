@@ -84,6 +84,12 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
     if (!didDragRef.current) {
       didDragRef.current = true
       setDragCursor()
+      
+      const element = event.currentTarget as E
+      const pointerId = pointerIdRef.current
+      if (pointerId != null && element != null) {
+        element.setPointerCapture(pointerId)
+      }
     }
 
     event.preventDefault()
@@ -114,7 +120,7 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
       }
       const didDrag = didDragRef.current || Math.hypot(delta.x, delta.y) > threshold
       const extent = makeRelative(point)
-      if (!didDrag) {
+      if (!didDrag && event.target === event.currentTarget) {
         configRef.current.click?.(extent, element, event)
       } else {
         event.preventDefault()
@@ -143,7 +149,6 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
 
     const state = configRef.current.start?.(makeRelative(anchor), element, event)
     stateRef.current = state
-    element.setPointerCapture(event.pointerId)
   }, [configRef, makeRelative])
 
   const handleLeave = useCallback((event: Event) => {
