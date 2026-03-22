@@ -11,6 +11,8 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
 
   const stateRef = useRef<S | undefined>(undefined)
   const anchorRef = useRef<Point | undefined>(undefined)
+  const didDragRef = useRef(false)
+  const pointerIdRef = useRef<number | undefined>(undefined)
   const configRef = useContinuousRef(config)
   const origCursorRef = useRef<CSSProperties['cursor'] | undefined>(undefined)
 
@@ -25,15 +27,49 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
     }
   }, [ref])
 
-  const handleDrag = useCallback((event: Event) => {
+  const resetCursor = useCallback(() => {
+    if (origCursorRef.current == null) { return }
+
+    document.body.style.cursor = origCursorRef.current
+    origCursorRef.current = undefined
+  }, [])
+
+  const setDragCursor = useCallback(() => {
+    if (config.cursor == null || origCursorRef.current != null) { return }
+
+    origCursorRef.current = document.body.style.cursor
+    document.body.style.cursor = config.cursor
+  }, [config.cursor])
+
+  const clearDragState = useCallback((element?: E | null) => {
+    const pointerId = pointerIdRef.current
+    if (element != null && pointerId != null && element.hasPointerCapture(pointerId)) {
+      element.releasePointerCapture(pointerId)
+    }
+
+    resetCursor()
+    anchorRef.current = undefined
+    stateRef.current = undefined
+    didDragRef.current = false
+    pointerIdRef.current = undefined
+  }, [resetCursor])
+
+  const handleMove = useCallback((event: Event) => {
     if (!(event instanceof PointerEvent)) { return }
-    event.preventDefault()
+
+    const element = event.currentTarget as E
+    const anchor = anchorRef.current
+    if (anchor == null) {
+      const point = getClientPoint(event)
+      if (point == null) { return }
+
+      configRef.current.move?.(makeRelative(point), element, event)
+      return
+    }
+
+    if (event.pointerId !== pointerIdRef.current) { return }
 
     const state = stateRef.current
-    const anchor = anchorRef.current
-    const element = event.currentTarget
-    if (anchor == null) { return }
-
     const point = getClientPoint(event)
     if (point == null) { return }
 
@@ -41,9 +77,16 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
       x: point.x - anchor.x,
       y: point.y - anchor.y,
     }
-    if (Math.abs(delta.x) < threshold && Math.abs(delta.y) < threshold) {
+    if (!didDragRef.current && Math.hypot(delta.x, delta.y) <= threshold) {
       return
     }
+
+    if (!didDragRef.current) {
+      didDragRef.current = true
+      setDragCursor()
+    }
+
+    event.preventDefault()
 
     const extent = makeRelative(point)
     const metrics: DragMetrics = {
@@ -52,36 +95,16 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
       delta,
     }
 
-    configRef.current.drag?.(metrics, state as S, element as E, event)
-  }, [configRef, makeRelative, threshold])
-
-  const handleMove = useCallback((event: Event) => {
-    if (!(event instanceof PointerEvent)) { return }
-    event.preventDefault()
-
-    const anchor = anchorRef.current
-    const element = event.currentTarget
-    if (anchor != null) { return }
-
-    const point = getClientPoint(event)
-    if (point == null) { return }
-
-    configRef.current.move?.(makeRelative(point), element as E, event)
-  }, [configRef, makeRelative])
+    configRef.current.drag?.(metrics, state as S, element, event)
+  }, [configRef, makeRelative, setDragCursor, threshold])
 
   const handleEnd = useCallback((event: Event) => {
     if (!(event instanceof PointerEvent)) { return }
-    event.preventDefault()
+    if (event.pointerId !== pointerIdRef.current) { return }
 
     const state = stateRef.current
-    const element = event.currentTarget
+    const element = event.currentTarget as E
     const point = getClientPoint(event)
-    if (point == null) { return }
-
-    if (origCursorRef.current != null) {
-      document.body.style.cursor = origCursorRef.current
-      origCursorRef.current = undefined
-    }
 
     const anchor = anchorRef.current
     if (anchor != null && point != null) {
@@ -89,62 +112,54 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
         x: point.x - anchor.x,
         y: point.y - anchor.y,
       }
-
+      const didDrag = didDragRef.current || Math.hypot(delta.x, delta.y) > threshold
       const extent = makeRelative(point)
-      if (Math.abs(delta.x) < threshold && Math.abs(delta.y) < threshold) {
-        configRef.current.click?.(extent, element as E, event)
+      if (!didDrag) {
+        configRef.current.click?.(extent, element, event)
       } else {
+        event.preventDefault()
         configRef.current.end?.({
           anchor: makeRelative(anchor),
           extent,
           delta,
-        }, state as S, element as E, event)
+        }, state as S, element, event)
       }
     }
 
-    anchorRef.current = undefined
-    stateRef.current = undefined
-    document.removeEventListener('pointermove', handleDrag)
-    document.removeEventListener('pointerup', handleEnd)
-  }, [configRef, handleDrag, makeRelative, threshold])
+    clearDragState(element)
+  }, [clearDragState, configRef, makeRelative, threshold])
 
   const handleStart = useCallback((event: Event) => {
     if (!(event instanceof PointerEvent)) { return }
-    event.preventDefault()
+    if (pointerIdRef.current != null) { return }
 
     const anchor = getClientPoint(event)
     if (anchor == null) { return }
+
+    const element = event.currentTarget as E
     anchorRef.current = anchor
-    
-    const element = event.currentTarget
-    const state = configRef.current.start?.(makeRelative(anchor), element as E, event)
+    didDragRef.current = false
+    pointerIdRef.current = event.pointerId
+
+    const state = configRef.current.start?.(makeRelative(anchor), element, event)
     stateRef.current = state
-
-    if (config.cursor != null) {
-      origCursorRef.current = document.body.style.cursor
-      document.body.style.cursor = config.cursor
-    }
-
-    document.addEventListener('pointermove', handleDrag)
-    document.addEventListener('pointerup', handleEnd)
-  }, [config.cursor, configRef, handleDrag, handleEnd, makeRelative])
+    element.setPointerCapture(event.pointerId)
+  }, [configRef, makeRelative])
 
   const handleLeave = useCallback((event: Event) => {
     if (!(event instanceof PointerEvent)) { return }
-    event.preventDefault()
+    if (anchorRef.current != null) { return }
 
-    const element = event.currentTarget
-    configRef.current.leave?.(element as E, event)
+    const element = event.currentTarget as E
+    configRef.current.leave?.(element, event)
+  }, [configRef])
 
-    stateRef.current = undefined
-    anchorRef.current = undefined
-    if (origCursorRef.current != null) {
-      document.body.style.cursor = origCursorRef.current
-      origCursorRef.current = undefined
-    }
-    document.removeEventListener('pointermove', handleDrag)
-    document.removeEventListener('pointerup', handleEnd)
-  }, [configRef, handleDrag, handleEnd])
+  const handleCancel = useCallback((event: Event) => {
+    if (!(event instanceof PointerEvent)) { return }
+    if (event.pointerId !== pointerIdRef.current) { return }
+
+    clearDragState(event.currentTarget as E)
+  }, [clearDragState])
 
   useEffect(() => {
     const element = ref.current
@@ -152,22 +167,19 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
     if (!enabled) { return }
 
     element.addEventListener('pointerdown', handleStart)
-    if (config.move != null) {
-      element.addEventListener('pointermove', handleMove)
-    }
-    if (config.leave != null) {
-      element.addEventListener('pointerleave', handleLeave)
-    }
+    element.addEventListener('pointermove', handleMove)
+    element.addEventListener('pointerup', handleEnd)
+    element.addEventListener('pointercancel', handleCancel)
+    element.addEventListener('pointerleave', handleLeave)
     return () => {
       element.removeEventListener('pointerdown', handleStart)
-      if (config.move != null) {
-        element.removeEventListener('pointermove', handleMove)
-      }
-      if (config.leave != null) {
-        element.removeEventListener('pointerleave', handleLeave)
-      }
+      element.removeEventListener('pointermove', handleMove)
+      element.removeEventListener('pointerup', handleEnd)
+      element.removeEventListener('pointercancel', handleCancel)
+      element.removeEventListener('pointerleave', handleLeave)
+      clearDragState(element)
     }
-  }, [config.leave, config.move, configRef, enabled, handleLeave, handleMove, handleStart, ref])
+  }, [clearDragState, enabled, handleCancel, handleEnd, handleLeave, handleMove, handleStart, ref])
 }
 
 export interface SimpleDragConfig<S, E> {
