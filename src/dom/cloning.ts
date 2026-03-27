@@ -1,8 +1,8 @@
-import { v4 as uuidV4 } from 'uuid'
+import { v7 as uuidV7 } from 'uuid'
 
 export function cloneElement(element: HTMLElement): HTMLElement {
   const clone = element.cloneNode(true) as HTMLElement
-  const prefix = uuidV4().slice(0, 8)
+  const prefix = uuidV7().slice(0, 8)
 
   // Prefix all IDs and url(#) references within (this fixes SVG masks getting messed up).
   for (const element of Array.from(clone.querySelectorAll('[id]'))) {
