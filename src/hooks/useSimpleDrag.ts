@@ -1,9 +1,9 @@
 import { CSSProperties, RefObject, useCallback, useEffect, useRef } from 'react'
-import { Point } from 'ytil'
+import { Point, Size } from 'ytil'
 import { getClientPoint } from '../dom'
 import { useContinuousRef } from './refs'
 
-export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, config: SimpleDragConfig<S, E>) {
+export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleDragConfig<S>) {
   const {
     enabled = true,
     threshold = 2,
@@ -11,6 +11,8 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
 
   const stateRef = useRef<S | undefined>(undefined)
   const anchorRef = useRef<Point | undefined>(undefined)
+  const offsetRef = useRef<Point>({x: 0, y: 0})
+  const sizeRef = useRef<Size>({width: 0, height: 0})
   const didDragRef = useRef(false)
   const pointerIdRef = useRef<number | undefined>(undefined)
   const configRef = useContinuousRef(config)
@@ -28,6 +30,54 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
     }
   }, [ref])
 
+  const makeMetrics = useCallback((anchor: Point, extent: Point) => {
+    const delta = {
+      x: extent.x - anchor.x,
+      y: extent.y - anchor.y,
+    }
+    const offset = offsetRef.current
+    const size = sizeRef.current  
+    return {
+      anchor,
+      offset,
+      size,
+      extent,
+      delta,
+    }
+
+  }, [])
+
+  const handleStart = useCallback((event: Event) => {
+    if (!(event instanceof PointerEvent)) { return }
+    if (!(event.target instanceof Element)) { return }
+    if (pointerIdRef.current != null) { return }
+
+    const point = getClientPoint(event)
+    if (point == null) { return }
+
+    anchorRef.current = point
+    didDragRef.current = false
+    origTargetRef.current = event.target
+    pointerIdRef.current = event.pointerId
+
+    const anchor = makeRelative(point)
+    const rect = event.target.getBoundingClientRect()
+    const offset = {
+      x: point.x - rect.left,
+      y: point.y - rect.top,
+    }
+    const size = {
+      width:  rect.width,
+      height: rect.height,
+    }
+    
+    offsetRef.current = offset
+    sizeRef.current = size  
+
+    const metrics = makeMetrics(anchor, anchor)
+    stateRef.current = configRef.current.start?.(metrics, event.target, event)
+  }, [configRef, makeMetrics, makeRelative])
+
   const resetCursor = useCallback(() => {
     if (origCursorRef.current == null) { return }
 
@@ -42,7 +92,7 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
     document.body.style.cursor = config.cursor
   }, [config.cursor])
 
-  const clearDragState = useCallback((element?: E | null) => {
+  const clearDragState = useCallback((element?: Element | null) => {
     const pointerId = pointerIdRef.current
     if (element != null && pointerId != null && element.hasPointerCapture(pointerId)) {
       element.releasePointerCapture(pointerId)
@@ -57,13 +107,13 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
 
   const handleMove = useCallback((event: Event) => {
     if (!(event instanceof PointerEvent)) { return }
+    if (!(event.target instanceof Element)) { return }
 
-    const element = event.currentTarget as E
     if (anchorRef.current == null) {
       const point = getClientPoint(event)
       if (point == null) { return }
 
-      configRef.current.move?.(makeRelative(point), element, event)
+      configRef.current.move?.(makeRelative(point), event.target, event)
       return
     }
 
@@ -76,98 +126,66 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
     
     const anchor = makeRelative(anchorRef.current)
     const extent = makeRelative(point)
-
-    const delta = {
-      x: extent.x - anchor.x,
-      y: extent.y - anchor.y,
-    }
-    if (!didDragRef.current && Math.hypot(delta.x, delta.y) <= threshold) {
+    const metrics = makeMetrics(anchor, extent)
+    if (!didDragRef.current && Math.hypot(metrics.delta.x, metrics.delta.y) <= threshold) {
       return
     }
 
     if (!didDragRef.current) {
       didDragRef.current = true
       setDragCursor()
-      const element = event.currentTarget as E
       const pointerId = pointerIdRef.current
-      if (pointerId != null && element != null) {
-        element.setPointerCapture(pointerId)
+      if (pointerId != null) {
+        event.target.setPointerCapture(pointerId)
       }
     }
 
     event.preventDefault()
 
-    const metrics: DragMetrics = {
-      anchor,
-      extent,
-      delta,
-    }
-
-    configRef.current.drag?.(metrics, state as S, element, event)
-  }, [configRef, makeRelative, setDragCursor, threshold])
+    configRef.current.drag?.(metrics, state as S, event.target, event)
+  }, [configRef, makeMetrics, makeRelative, setDragCursor, threshold])
 
   const handleEnd = useCallback((event: Event) => {
     if (!(event instanceof PointerEvent)) { return }
+    if (!(event.target instanceof Element)) { return }
     if (event.pointerId !== pointerIdRef.current) { return }
 
     const state = stateRef.current
-    const element = event.currentTarget as E
     const point = getClientPoint(event)
 
     if (anchorRef.current != null && point != null) {
       const anchor = makeRelative(anchorRef.current)
       const extent = makeRelative(point)
+      const metrics = makeMetrics(anchor, extent)
 
       if (!didDragRef.current && event.target === origTargetRef.current) {
-        configRef.current.click?.(extent, element, event)
+        configRef.current.click?.(metrics, state as S, event.target, event)
       } else {
-        const delta = {
-          x: extent.x - anchor.x,
-          y: extent.y - anchor.y,
-        }
-
-        configRef.current.end?.({
-          anchor,
-          extent,
-          delta,
-        }, state as S, element, event)
+        const offset = offsetRef.current
+        const size = sizeRef.current  
+        configRef.current.end?.(metrics, state as S, event.target, event)
         event.preventDefault()
       }
     }
 
-    clearDragState(element)
-  }, [clearDragState, configRef, makeRelative])
-
-  const handleStart = useCallback((event: Event) => {
-    if (!(event instanceof PointerEvent)) { return }
-    if (pointerIdRef.current != null) { return }
-
-    const anchor = getClientPoint(event)
-    if (anchor == null) { return }
-
-    const element = event.currentTarget as E
-    anchorRef.current = anchor
-    didDragRef.current = false
-    origTargetRef.current = event.target
-    pointerIdRef.current = event.pointerId
-
-    const state = configRef.current.start?.(makeRelative(anchor), element, event)
-    stateRef.current = state
-  }, [configRef, makeRelative])
+    clearDragState(event.target)
+  }, [clearDragState, configRef, makeMetrics, makeRelative])
 
   const handleLeave = useCallback((event: Event) => {
     if (!(event instanceof PointerEvent)) { return }
+    if (!(event.target instanceof Element)) { return }
+    if (stateRef.current == null) { return }
     if (anchorRef.current != null) { return }
-
-    const element = event.currentTarget as E
-    configRef.current.leave?.(element, event)
+    
+    configRef.current.leave?.(event.target, stateRef.current as S, event)
   }, [configRef])
 
   const handleCancel = useCallback((event: Event) => {
     if (!(event instanceof PointerEvent)) { return }
+    if (!(event.target instanceof Element)) { return }
     if (event.pointerId !== pointerIdRef.current) { return }
 
-    clearDragState(event.currentTarget as E)
+    clearDragState(event.target)
   }, [clearDragState])
 
   useEffect(() => {
@@ -191,22 +209,24 @@ export function useSimpleDrag<S, E extends Element>(ref: RefObject<E | null>, co
   }, [clearDragState, enabled, handleCancel, handleEnd, handleLeave, handleMove, handleStart, ref])
 }
 
-export interface SimpleDragConfig<S, E> {
+export interface SimpleDragConfig<S> {
   enabled?: boolean
   threshold?: number
   cursor?: CSSProperties['cursor']
 
-  start?: (point: Point, element: E, event: PointerEvent | TouchEvent) => S
-  drag?:  (metrics: DragMetrics, state: S, element: E, event: PointerEvent | TouchEvent) => void
-  end?:   (metrics: DragMetrics, state: S, element: E, event: PointerEvent | TouchEvent) => void
+  start?: (metrics: DragMetrics, element: Element, event: PointerEvent | TouchEvent) => S
+  drag?:  (metrics: DragMetrics, state: S, element: Element, event: PointerEvent | TouchEvent) => void
+  end?:   (metrics: DragMetrics, state: S, element: Element, event: PointerEvent | TouchEvent) => void
 
-  click?: (point: Point, element: E, event: PointerEvent | TouchEvent) => void
-  move?: (point: Point, element: E, event: PointerEvent | TouchEvent) => void
-  leave?: (element: E, event: PointerEvent | TouchEvent) => void,
+  click?: (metrics: DragMetrics, state: S, element: Element, event: PointerEvent | TouchEvent) => void
+  leave?: (element: Element, state: S, event: PointerEvent | TouchEvent) => void,
+  move?: (point: Point, element: Element, event: PointerEvent | TouchEvent) => void
 }
 
 export interface DragMetrics {
   anchor: Point
+  offset: Point
+  size: Size
   extent: Point
   delta: Point
 }
