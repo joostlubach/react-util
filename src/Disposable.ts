@@ -2,6 +2,10 @@ import { IReactionDisposer, IReactionOptions, IReactionPublic, reaction } from '
 
 export class Disposable {
 
+  constructor() {
+    Object.defineProperty(this, 'disposers', {enumerable: false})
+  }
+
   private disposers: DisposableCleaner[] = []
 
   protected disposer(...disposers: DisposableCleaner[]) {
