@@ -1,4 +1,4 @@
-export function saveAs(data: Blob | string, filename: string) {
+export function saveAs(data: Blob | string, filename: string = 'file') {
   const dataURI = data instanceof Blob ? URL.createObjectURL(data) : data
 
   try {
