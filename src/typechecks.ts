@@ -58,6 +58,10 @@ export function isReactFragment(children: ReactNode): children is ReactElement<{
   return isValidElement(children) && children.type === Fragment
 }
 
+export function isReactElementOfType<P>(children: ReactNode, type: ComponentType<P>): children is ReactElement<P> {
+  return isValidElement(children) && children.type === type
+}
+
 export function isReactProvider<T>(children: ReactNode): children is ReactElement<any, Provider<T>> {
   if (!isValidElement(children)) { return false }
   if (!isFunction(children.type)) { return false }
