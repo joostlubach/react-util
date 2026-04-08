@@ -7,4 +7,4 @@ export interface KeyboardNavigationNode<It, K extends Key = Key> {
 }
 
 export type KeyPath<K extends Key = Key> = K[]
-export type Key = string | number
+export type Key = string | number | boolean | null

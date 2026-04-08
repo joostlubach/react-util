@@ -5,7 +5,7 @@ import { ListKeyboardNavigation } from './ListKeyboardNavigation'
 import { MenuKeyboardNavigation } from './MenuKeyboardNavigation'
 import { Key, KeyboardNavigationData, KeyPath } from './types'
 
-export function useKeyboardNavigation<It, K extends Key = Key>(
+export function useKeyboardNavigation<It, K extends Key>(
   data:       KeyboardNavigationData<It, K>,
   keyPath:    KeyPath<K>,
   setKeyPath: (keyPath: KeyPath<K>) => void,
