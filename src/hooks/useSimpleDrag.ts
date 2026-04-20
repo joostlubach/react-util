@@ -174,10 +174,9 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
   const handleLeave = useCallback((event: Event) => {
     if (!(event instanceof PointerEvent)) { return }
     if (!(event.target instanceof Element)) { return }
-    if (stateRef.current == null) { return }
     if (anchorRef.current != null) { return }
     
-    configRef.current.leave?.(event.target, stateRef.current as S, event)
+    configRef.current.leave?.(event.target, stateRef.current as S | null, event)
   }, [configRef])
 
   const handleCancel = useCallback((event: Event) => {
@@ -219,7 +218,7 @@ export interface SimpleDragConfig<S> {
   end?:   (metrics: DragMetrics, state: S, element: Element, event: PointerEvent | TouchEvent) => void
 
   click?: (metrics: DragMetrics, state: S, element: Element, event: PointerEvent | TouchEvent) => void
-  leave?: (element: Element, state: S, event: PointerEvent | TouchEvent) => void,
+  leave?: (element: Element, state: S | null, event: PointerEvent | TouchEvent) => void,
   move?: (point: Point, element: Element, event: PointerEvent | TouchEvent) => void
 }
 
