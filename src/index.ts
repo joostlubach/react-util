@@ -3,6 +3,7 @@ export * from './dom'
 export * from './links'
 export * from './saving'
 export * from './supercontainer'
+export * from './renderWithSeparator'
 export * from './typechecks'
 export * from './Disposable'
 
