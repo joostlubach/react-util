@@ -27,7 +27,6 @@ export function useTransitionValue<E extends HTMLElement>(
   ref: React.RefObject<E | null>,
   calculate: (element: E) => number,
   getDefault: () => number,
-  interval: number = 50,
 ) {
   const [value, setValue] = useState<number>(getDefault())
   const timer = useTimer()
@@ -39,20 +38,16 @@ export function useTransitionValue<E extends HTMLElement>(
     if (element == null) { return }
     
     const tick = () => {
-      timer.requestAnimationFrame(() => {
-        setValue(calculate(element))
-      })
-      timer.setTimeout(tick, interval)
+      setValue(calculate(element))
+      timer.requestAnimationFrame(tick)
     }
 
     const onTransitionStart = () => {
-      timer.setTimeout(tick, 0)
+      timer.requestAnimationFrame(tick)
     }
     const onTransitionEnd = () => {
-      timer.setTimeout(() => {
-        timer.clearAll()
-        setValue(getDefault())
-      }, 16)
+      timer.cancelAllAnimationFrames()
+      setValue(getDefault())
     }
 
     element.addEventListener('transitionstart', onTransitionStart)
@@ -63,7 +58,7 @@ export function useTransitionValue<E extends HTMLElement>(
       element.removeEventListener('transitionstart', onTransitionStart)
       element.removeEventListener('transitionend', onTransitionEnd)
     }
-  }, [setValue, ref, calculate, timer, interval, obj, getDefault])
+  }, [setValue, ref, calculate, timer, obj, getDefault])
 
   return [value, setValue] as const
 }
