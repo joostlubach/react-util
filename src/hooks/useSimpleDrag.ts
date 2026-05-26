@@ -53,9 +53,9 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
   }, [])
 
   const handleStart = useCallback((event: Event) => {
-    console.log('START', event.currentTarget)
     if (!(event instanceof PointerEvent)) { return }
     if (!(event.target instanceof Element)) { return }
+    if (!(event.currentTarget instanceof Element)) { return }
     if (pointerIdRef.current != null) { return }
 
     const anchor = getClientPoint(event)
@@ -65,6 +65,10 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
     stateRef.current = undefined
     origTargetRef.current = event.target
     pointerIdRef.current = event.pointerId
+
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId)
+    } catch {}
 
     const rect = event.target.getBoundingClientRect()
     const offset = {
@@ -112,7 +116,6 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
   }, [resetCursor, timer])
 
   const handleMove = useCallback((event: Event) => {
-    console.log('MOVE', event.currentTarget)
     if (!(event instanceof PointerEvent)) { return }
     if (!(event.target instanceof Element)) { return }
 
@@ -143,11 +146,6 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
       historyRef.current.push({point: extent, time: performance.now()})
 
       setDragCursor()
-      const pointerId = pointerIdRef.current
-      if (pointerId != null) {
-        console.log('CAPTURE', pointerId)
-        event.target.setPointerCapture(pointerId)
-      }
 
       const scheduleSample = () => {
         timer.setTimeout(() => {
@@ -173,9 +171,9 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
   }, [configRef, makeMetrics, makeRelative, setDragCursor, threshold, timer])
 
   const handleEnd = useCallback((event: Event) => {
-    console.log('END', event.currentTarget)
     if (!(event instanceof PointerEvent)) { return }
     if (!(event.target instanceof Element)) { return }
+    if (!(event.currentTarget instanceof Element)) { return }
     if (event.pointerId !== pointerIdRef.current) { return }
 
     const state = stateRef.current
@@ -194,26 +192,27 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
       }
     }
 
-    clearDragState(event.target)
+    clearDragState(event.currentTarget)
   }, [clearDragState, configRef, makeMetrics, makeRelative])
 
   const handleLostPointerCapture = useCallback((event: Event) => {
-    console.log('LOST POINTER CAPTURE', event.currentTarget)
     if (!(event instanceof PointerEvent)) { return }
     if (!(event.target instanceof Element)) { return }
-    if (anchorRef.current != null) { return }
-    
-    configRef.current.cancel?.(event.target, event)
-  }, [configRef])
-
-  const handleCancel = useCallback((event: Event) => {
-    console.log('CANCEL', event.currentTarget)
-    if (!(event instanceof PointerEvent)) { return }
-    if (!(event.target instanceof Element)) { return }
+    if (!(event.currentTarget instanceof Element)) { return }
     if (event.pointerId !== pointerIdRef.current) { return }
 
     configRef.current.cancel?.(event.target, event)
-    clearDragState(event.target)
+    clearDragState(event.currentTarget)
+  }, [clearDragState, configRef])
+
+  const handleCancel = useCallback((event: Event) => {
+    if (!(event instanceof PointerEvent)) { return }
+    if (!(event.target instanceof Element)) { return }
+    if (!(event.currentTarget instanceof Element)) { return }
+    if (event.pointerId !== pointerIdRef.current) { return }
+
+    configRef.current.cancel?.(event.target, event)
+    clearDragState(event.currentTarget)
   }, [clearDragState, configRef])
 
   useEffect(() => {
