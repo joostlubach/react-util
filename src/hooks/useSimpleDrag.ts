@@ -53,6 +53,7 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
   }, [])
 
   const handleStart = useCallback((event: Event) => {
+    console.log('START', event.currentTarget)
     if (!(event instanceof PointerEvent)) { return }
     if (!(event.target instanceof Element)) { return }
     if (pointerIdRef.current != null) { return }
@@ -111,6 +112,7 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
   }, [resetCursor, timer])
 
   const handleMove = useCallback((event: Event) => {
+    console.log('MOVE', event.currentTarget)
     if (!(event instanceof PointerEvent)) { return }
     if (!(event.target instanceof Element)) { return }
 
@@ -143,6 +145,7 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
       setDragCursor()
       const pointerId = pointerIdRef.current
       if (pointerId != null) {
+        console.log('CAPTURE', pointerId)
         event.target.setPointerCapture(pointerId)
       }
 
@@ -170,6 +173,7 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
   }, [configRef, makeMetrics, makeRelative, setDragCursor, threshold, timer])
 
   const handleEnd = useCallback((event: Event) => {
+    console.log('END', event.currentTarget)
     if (!(event instanceof PointerEvent)) { return }
     if (!(event.target instanceof Element)) { return }
     if (event.pointerId !== pointerIdRef.current) { return }
@@ -193,21 +197,24 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
     clearDragState(event.target)
   }, [clearDragState, configRef, makeMetrics, makeRelative])
 
-  const handleLeave = useCallback((event: Event) => {
+  const handleLostPointerCapture = useCallback((event: Event) => {
+    console.log('LOST POINTER CAPTURE', event.currentTarget)
     if (!(event instanceof PointerEvent)) { return }
     if (!(event.target instanceof Element)) { return }
     if (anchorRef.current != null) { return }
     
-    configRef.current.leave?.(event.target, stateRef.current as S | null, event)
+    configRef.current.cancel?.(event.target, event)
   }, [configRef])
 
   const handleCancel = useCallback((event: Event) => {
+    console.log('CANCEL', event.currentTarget)
     if (!(event instanceof PointerEvent)) { return }
     if (!(event.target instanceof Element)) { return }
     if (event.pointerId !== pointerIdRef.current) { return }
 
+    configRef.current.cancel?.(event.target, event)
     clearDragState(event.target)
-  }, [clearDragState])
+  }, [clearDragState, configRef])
 
   useEffect(() => {
     const element = ref.current
@@ -218,16 +225,16 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
     element.addEventListener('pointermove', handleMove)
     element.addEventListener('pointerup', handleEnd)
     element.addEventListener('pointercancel', handleCancel)
-    element.addEventListener('pointerleave', handleLeave)
+    element.addEventListener('lostpointercapture', handleLostPointerCapture)
     return () => {
       element.removeEventListener('pointerdown', handleStart)
       element.removeEventListener('pointermove', handleMove)
       element.removeEventListener('pointerup', handleEnd)
       element.removeEventListener('pointercancel', handleCancel)
-      element.removeEventListener('pointerleave', handleLeave)
+      element.removeEventListener('lostpointercapture', handleLostPointerCapture)
       clearDragState(element)
     }
-  }, [clearDragState, enabled, handleCancel, handleEnd, handleLeave, handleMove, handleStart, ref])
+  }, [clearDragState, enabled, handleCancel, handleEnd, handleLostPointerCapture, handleMove, handleStart, ref])
 }
 
 export interface SimpleDragConfig<S> {
@@ -241,9 +248,9 @@ export interface SimpleDragConfig<S> {
   drag?:  (metrics: DragMetrics, state: S, element: Element, event: PointerEvent | TouchEvent) => void
   end?:   (metrics: DragMetrics, state: S, element: Element, event: PointerEvent | TouchEvent) => void
 
-  click?: (metrics: DragMetrics, element: Element, event: PointerEvent | TouchEvent) => void
-  leave?: (element: Element, state: S | null, event: PointerEvent | TouchEvent) => void,
-  move?: (point: Point, element: Element, event: PointerEvent | TouchEvent) => void
+  click?:  (metrics: DragMetrics, element: Element, event: PointerEvent | TouchEvent) => void
+  move?:   (point: Point, element: Element, event: PointerEvent | TouchEvent) => void
+  cancel?: (element: Element, event: PointerEvent | TouchEvent) => void
 }
 
 export interface DragMetrics {
