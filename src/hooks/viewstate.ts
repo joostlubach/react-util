@@ -1,4 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
+import { isFunction } from 'ytil'
+import { useContinuousRef } from './refs'
 
 const STORAGE: Storage | null = 'localStorage' in globalThis ? globalThis.localStorage : null
 
@@ -21,9 +23,15 @@ export function useViewState<T>(key: string | undefined, initialValue: T): ViewS
     }
   }, [lastStoredAt, key, initialValue])
 
+  const valueRef = useContinuousRef(value)
+
   // When setting the value, update local storage and break cache by setting last stored at to now.
-  const setValue = useCallback((value: T) => {
+  const setValue = useCallback((valueOrUpdate: T | ((prev: T) => T)) => {
     if (key === undefined) { return }
+
+    const value = isFunction(valueOrUpdate)
+      ? valueOrUpdate(valueRef.current as T)
+      : valueOrUpdate
 
     if (value === undefined) {
       STORAGE?.removeItem(key)
@@ -45,6 +53,6 @@ export function useViewState<T>(key: string | undefined, initialValue: T): ViewS
 
 export type ViewStateHook<T> = [
   T,
-  (value: T) => void,
+  (valueOrUpdate: T | ((prev: T) => T)) => void,
   () => void,
 ]
