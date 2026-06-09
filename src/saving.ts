@@ -1,5 +1,5 @@
-export function saveAs(data: Blob | string, filename: string = 'file') {
-  const dataURI = data instanceof Blob ? URL.createObjectURL(data) : data
+export function saveAs(data: Blob, filename: string = 'file') {
+  const dataURI = URL.createObjectURL(data)
 
   try {
     const link = document.createElement('a')
@@ -7,8 +7,6 @@ export function saveAs(data: Blob | string, filename: string = 'file') {
     link.download = filename
     link.click()
   } finally {
-    if (data instanceof Blob) {
-      URL.revokeObjectURL(dataURI)
-    }
+    URL.revokeObjectURL(dataURI)
   }
 }
