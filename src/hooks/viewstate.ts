@@ -39,7 +39,7 @@ export function useViewState<T>(key: string | undefined, initialValue: T): ViewS
       STORAGE?.setItem(key, JSON.stringify(value))
     }
     setLastStoredAt(Date.now())
-  }, [key])
+  }, [key, valueRef])
 
   // When deleting the value, update local storage and break cache by setting last stored at to now.
   const deleteValue = useCallback(() => {
