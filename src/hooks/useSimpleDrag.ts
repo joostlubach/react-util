@@ -67,7 +67,7 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
     pointerIdRef.current = event.pointerId
 
     try {
-      event.currentTarget.setPointerCapture(event.pointerId)
+      event.target.setPointerCapture(event.pointerId)
     } catch {}
 
     const rect = event.target.getBoundingClientRect()
