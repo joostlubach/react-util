@@ -56,6 +56,7 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
     if (!(event instanceof PointerEvent)) { return }
     if (!(event.target instanceof Element)) { return }
     if (!(event.currentTarget instanceof Element)) { return }
+    if (configRef.current.rootOnly && event.target !== event.currentTarget) { return }
     if (pointerIdRef.current != null) { return }
 
     const anchor = getClientPoint(event)
@@ -82,7 +83,7 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
     
     offsetRef.current = offset
     sizeRef.current = size  
-  }, [])
+  }, [configRef])
 
   const resetCursor = useCallback(() => {
     if (origCursorRef.current == null) { return }
@@ -118,6 +119,7 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
   const handleMove = useCallback((event: Event) => {
     if (!(event instanceof PointerEvent)) { return }
     if (!(event.target instanceof Element)) { return }
+    if (configRef.current.rootOnly && event.target !== event.currentTarget) { return }
 
     if (anchorRef.current == null) {
       const point = getClientPoint(event)
@@ -174,6 +176,7 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
     if (!(event instanceof PointerEvent)) { return }
     if (!(event.target instanceof Element)) { return }
     if (!(event.currentTarget instanceof Element)) { return }
+    if (configRef.current.rootOnly && event.target !== event.currentTarget) { return }
     if (event.pointerId !== pointerIdRef.current) { return }
 
     const state = stateRef.current
@@ -199,6 +202,7 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
     if (!(event instanceof PointerEvent)) { return }
     if (!(event.target instanceof Element)) { return }
     if (!(event.currentTarget instanceof Element)) { return }
+    if (configRef.current.rootOnly && event.target !== event.currentTarget) { return }
     if (event.pointerId !== pointerIdRef.current) { return }
 
     configRef.current.cancel?.(event.target, event)
@@ -209,6 +213,7 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
     if (!(event instanceof PointerEvent)) { return }
     if (!(event.target instanceof Element)) { return }
     if (!(event.currentTarget instanceof Element)) { return }
+    if (configRef.current.rootOnly && event.target !== event.currentTarget) { return }
     if (event.pointerId !== pointerIdRef.current) { return }
 
     configRef.current.cancel?.(event.target, event)
@@ -242,6 +247,7 @@ export interface SimpleDragConfig<S> {
   velocityHistorySize?: number
   velocitySampleInterval?: number
   cursor?: CSSProperties['cursor']
+  rootOnly?: boolean
 
   start?: (metrics: DragMetrics, element: Element, event: PointerEvent | TouchEvent) => S
   drag?:  (metrics: DragMetrics, state: S, element: Element, event: PointerEvent | TouchEvent) => void
