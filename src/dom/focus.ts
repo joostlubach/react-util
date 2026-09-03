@@ -1,3 +1,5 @@
+import { isFunction } from 'lodash'
+
 export function focusFirst(container: Element, options: FocusInContainerOptions = {}) {
   return focusFirstOrLast(container, true, options)
 }
@@ -32,6 +34,7 @@ function focusFirstOrLast(container: Element, first: boolean, options: FocusInCo
   const {
     default: _default = true,
     select = false,
+    focusVisible: option_focusVisible,
     ...rest
   } = options
 
@@ -43,8 +46,10 @@ function focusFirstOrLast(container: Element, first: boolean, options: FocusInCo
   if (focusables.length === 0) { return null }
 
   const focusable = first ? focusables[0] : focusables[focusables.length - 1]
+  const focusVisible = isFunction(option_focusVisible) ? option_focusVisible(focusable) : option_focusVisible
+  const focusOptions = {...rest, focusVisible} as FocusOptions
 
-  focusable.focus(rest)
+  focusable.focus(focusOptions)
   if (select && focusable instanceof HTMLInputElement) {
     focusable.select()
   }
@@ -122,9 +127,13 @@ export interface FocusInContainerOptions extends FindFocusableOptions, FocusOpti
   default?: boolean
 
   /**
-   * Pretty much supported everywhere and doesn't cause any issues, but can be set to `true` to prevent scrolling the element into view when focusing it.
+   * A boolean value that should be set to true to force, or false to prevent visible indication
+   * that the element is focused. If the property is not specified, a browser will provide visible
+   * indication if it determines that this would improve accessibility for users.
+   * 
+   * Note: not available in all browsers.
    */
-  focusVisible?: boolean
+  focusVisible?: boolean | ((element: HTMLElement) => boolean)
 }
 
 const SELECTORS = {
