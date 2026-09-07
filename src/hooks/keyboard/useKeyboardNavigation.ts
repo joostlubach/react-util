@@ -35,6 +35,8 @@ export function useKeyboardNavigation<It, K extends Key>(
 
     if (selectKeys.includes(event.key)) {
       const node = navigationRef.current.nodeAtKeyPath(keyPathRef.current)
+      if (node == null) { return }
+      event.preventDefault()
       onSelectRef.current?.(node?.item ?? null)
     }
 
