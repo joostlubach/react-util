@@ -57,6 +57,10 @@ export class ListKeyboardNavigation<K extends Key = Key> extends BaseKeyboardNav
     return this.flattened[index]?.[0]
   }
 
+  protected candidates() {
+    return this.flattened
+  }
+
   //------
   // Utility
 
