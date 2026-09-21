@@ -1,4 +1,3 @@
-import { isFunction, isPlainObject } from 'lodash'
 import {
   Children,
   ComponentType,
@@ -9,45 +8,88 @@ import {
   ReactElement,
   ReactNode,
 } from 'react'
+import { isFunction, isPlainObject } from 'ytil'
 
 export function childrenOfType<P>(children: ReactNode, ...types: ComponentType<P>[]): Array<ReactElement<P>> {
-  return childrenMatching<P>(children, element => {
+  return extractChildren<P>(children, element => {
     if (typeof element.type === 'string') { return false }
     return types.includes(element.type)
   })[0]
 }
 
 export function childrenNotOfType(children: ReactNode, types: ComponentType<any>[]): Array<ReactElement<any>> {
-  return childrenMatching(children, element => {
+  return extractChildren(children, element => {
     if (typeof element.type === 'string') { return true }
     return !types.includes(element.type)
   })[0]
 }
 
-export function childrenMatching<P>(children: ReactNode, predicate: (element: ReactElement) => boolean): [ReactElement<P>[], ReactNode] {
+export function hasChildrenOfType(children: ReactNode, ...types: ComponentType[]): boolean {
+  let found: boolean = false
+  walkChildren(children, node => {
+    if (!isValidElement(node)) { return }
+    if (typeof node.type === 'string') { return }
+    if (types.includes(node.type)) {
+      found = true
+      return false // To break the loop
+    }
+  })
+
+  return found
+}
+
+export function extractChildren<P>(children: ReactNode, predicate: (element: ReactElement) => boolean, options: WalkChildrenOptions = {}): [ReactElement<P>[], ReactNode] {
   const matching: Array<ReactElement<P>> = []
   const remaining: Array<ReactNode> = []
+
+  walkChildren(children, node => {
+    if (!isValidElement(node)) {
+      remaining.push(node)
+    } else if (predicate(node)) {
+      matching.push(node as ReactElement<P>)
+    } else {
+      remaining.push(node)
+    }
+  }, options)
+
+  return [matching, remaining]
+}
+
+export function walkChildren(children: ReactNode, fn: (element: ReactNode) => void | false, options: WalkChildrenOptions = {}) {
+  const {
+    recurseFragments = true,
+    recurseProviders = true,
+    recurseOther = false,
+  } = options
 
   const iterate = (node: ReactNode) => {
     const array = Children.toArray(node)
     for (const node of array) {
-      if (!isValidElement(node)) {
-        remaining.push(node)
-        continue
-      }
+      if (fn(node) === false) { break }
 
-      if (isReactFragment(node) || isReactProvider(node)) {
-        iterate(node.props.children)
-      } else if (predicate(node)) {
-        matching.push(node as ReactElement<P>)
-      } else {
-        remaining.push(node)
+      if (isReactFragment(node)) {
+        if (recurseFragments) {
+          iterate(node.props.children)
+        }
+      } else if (isReactProvider(node)) {
+        if (recurseProviders) {
+          iterate(node.props.children)
+        }
+      } else if (isValidElement(node) && isPlainObject(node.props) && 'children' in node.props) {
+        if (recurseOther) {
+          iterate(node.props.children)
+        }
       }
     }
   }
 
   iterate(children)
-  return [matching, remaining]
+}
+
+export interface WalkChildrenOptions {
+  recurseFragments?: boolean
+  recurseProviders?: boolean
+  recurseOther?: boolean
 }
 
 export function isReactText(children: ReactNode): children is string | number {
