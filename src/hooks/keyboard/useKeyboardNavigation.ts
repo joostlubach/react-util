@@ -20,6 +20,9 @@ export function useKeyboardNavigation<It, K extends Key>(
     homeEnd = false,
     preventDefault = true,
     stopPropagation = true,
+
+    beforeHandle,
+    afterHandle,
   } = options
 
   const navigation = useMemo(() => {
@@ -33,19 +36,25 @@ export function useKeyboardNavigation<It, K extends Key>(
   const keyPathRef = useContinuousRef(keyPath)
   const navigationRef = useContinuousRef(navigation)
   const onSelectRef = useContinuousRef(onSelect)
+  const beforeHandleRef = useContinuousRef(beforeHandle)
+  const afterHandleRef = useContinuousRef(afterHandle)
 
   const typeaheadRef = useRef<{searchString: string, lastTime: number | null}>({searchString: '', lastTime: null})
 
-  const eventHandled = useCallback((event: Event)=> {
+  const eventHandled = useCallback((event: KeyboardEvent)=> {
+    afterHandleRef.current?.(event)
+
     if (preventDefault) {
       event.preventDefault()
     }
     if (stopPropagation) {
       event.stopPropagation()
     }
-  }, [preventDefault, stopPropagation])
+  }, [afterHandleRef, preventDefault, stopPropagation])
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    if (beforeHandleRef.current?.(event) === false) { return }
+
     if (typeahead && isTypeaheadKey(event)) {
       const nextKeyPath = navigationRef.current.typeahead(keyPathRef.current, nextSearchString(typeaheadRef.current, event.key))
       if (nextKeyPath != null) {
@@ -63,7 +72,6 @@ export function useKeyboardNavigation<It, K extends Key>(
         setKeyPath(nextKeyPath)
         eventHandled(event)
       }
-      return
     }
 
     if (selectKeys.includes(event.key)) {
@@ -78,7 +86,7 @@ export function useKeyboardNavigation<It, K extends Key>(
       setKeyPath(nextKeyPath)
       eventHandled(event)
     }
-  }, [eventHandled, homeEnd, keyPathRef, navigationRef, onSelectRef, selectKeys, setKeyPath, typeahead])
+  }, [beforeHandleRef, eventHandled, homeEnd, keyPathRef, navigationRef, onSelectRef, selectKeys, setKeyPath, typeahead])
 
   const currentElementRef = useRef<HTMLElement | Window | null>(null)
 
@@ -144,6 +152,9 @@ export interface KeyboardNavigationOptions<It> {
    * Set to false to prevent having the hook call .stopPropagation() on a handled key event.
    */
   stopPropagation?: boolean
+
+  beforeHandle?: (event: KeyboardEvent) => boolean | void
+  afterHandle?: (event: KeyboardEvent) => void
 }
 
 export interface UseKeyboardNavigationHook {
