@@ -42,7 +42,7 @@ function parseKeystroke(keystroke: string): {modifiers: Set<Modifier>, key: stri
   return {modifiers, key}
 }
 
-const isMac = 'navigator' in window && navigator.userAgent.toUpperCase().includes('MAC')
+const isMac = 'navigator' in globalThis && navigator.userAgent.toUpperCase().includes('MAC')
 
 const modifierAliases: Record<string, Modifier> = {
   alt:     'alt',
