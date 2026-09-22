@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { useContinuousRef } from '../refs'
 import { GridKeyboardNavigation } from './GridKeyboardNavigation'
 import { ListKeyboardNavigation } from './ListKeyboardNavigation'
@@ -18,9 +18,11 @@ export function useKeyboardNavigation<It, K extends Key>(
     selectKeys = ['Enter'],
     typeahead = false,
     homeEnd = false,
+    preventDefault = true,
+    stopPropagation = true,
   } = options
 
-  const navigation = React.useMemo(() => {
+  const navigation = useMemo(() => {
     switch (mode) {
     case 'list': return new ListKeyboardNavigation(data)
     case 'grid': return new GridKeyboardNavigation(data, columns)
@@ -32,14 +34,23 @@ export function useKeyboardNavigation<It, K extends Key>(
   const navigationRef = useContinuousRef(navigation)
   const onSelectRef = useContinuousRef(onSelect)
 
-  const typeaheadRef = React.useRef<{searchString: string, lastTime: number | null}>({searchString: '', lastTime: null})
+  const typeaheadRef = useRef<{searchString: string, lastTime: number | null}>({searchString: '', lastTime: null})
 
-  const handleKeyDown = React.useCallback((event: KeyboardEvent) => {
+  const eventHandled = useCallback((event: Event)=> {
+    if (preventDefault) {
+      event.preventDefault()
+    }
+    if (stopPropagation) {
+      event.stopPropagation()
+    }
+  }, [preventDefault, stopPropagation])
+
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (typeahead && isTypeaheadKey(event)) {
       const nextKeyPath = navigationRef.current.typeahead(keyPathRef.current, nextSearchString(typeaheadRef.current, event.key))
       if (nextKeyPath != null) {
         setKeyPath(nextKeyPath)
-        event.preventDefault()
+        eventHandled(event)
       }
       return
     }
@@ -50,7 +61,7 @@ export function useKeyboardNavigation<It, K extends Key>(
       const nextKeyPath = navigationRef.current.edge(keyPathRef.current, event.key === 'Home' ? 'first' : 'last')
       if (nextKeyPath != null) {
         setKeyPath(nextKeyPath)
-        event.preventDefault()
+        eventHandled(event)
       }
       return
     }
@@ -58,28 +69,28 @@ export function useKeyboardNavigation<It, K extends Key>(
     if (selectKeys.includes(event.key)) {
       const node = navigationRef.current.nodeAtKeyPath(keyPathRef.current)
       if (node == null) { return }
-      event.preventDefault()
+      eventHandled(event)
       onSelectRef.current?.(node?.item ?? null)
     }
 
     const nextKeyPath = navigationRef.current.handle(keyPathRef.current, event.key)
     if (nextKeyPath != null) {
       setKeyPath(nextKeyPath)
-      event.preventDefault()
+      eventHandled(event)
     }
-  }, [homeEnd, keyPathRef, navigationRef, onSelectRef, selectKeys, setKeyPath, typeahead])
+  }, [eventHandled, homeEnd, keyPathRef, navigationRef, onSelectRef, selectKeys, setKeyPath, typeahead])
 
-  const currentElementRef = React.useRef<HTMLElement | Window | null>(null)
+  const currentElementRef = useRef<HTMLElement | Window | null>(null)
 
-  const bind = React.useCallback((element: HTMLElement | Window) => {
+  const bind = useCallback((element: HTMLElement | Window) => {
     (element as HTMLElement).addEventListener('keydown', handleKeyDown)
   }, [handleKeyDown])
 
-  const unbind = React.useCallback((element: HTMLElement | Window) => {
+  const unbind = useCallback((element: HTMLElement | Window) => {
     (element as HTMLElement).removeEventListener('keydown', handleKeyDown)
   }, [handleKeyDown])
 
-  const disconnect = React.useCallback((element: HTMLElement | Window | null) => {
+  const disconnect = useCallback((element: HTMLElement | Window | null) => {
     const current = currentElementRef.current
     if (element !== current) { return }
 
@@ -90,7 +101,7 @@ export function useKeyboardNavigation<It, K extends Key>(
     currentElementRef.current = null
   }, [unbind])
 
-  const connect = React.useCallback((nextElement: HTMLElement | Window | null) => {
+  const connect = useCallback((nextElement: HTMLElement | Window | null) => {
     const prevElement = currentElementRef.current
     if (prevElement === nextElement) { return }
 
@@ -123,6 +134,16 @@ export interface KeyboardNavigationOptions<It> {
 
   /** Home and End jump to the first and last node. Do not use with text inputs. */
   homeEnd?:    boolean
+
+  /**
+   * Set to false to prevent having the hook call .preventDefault() on a handled key event.
+   */
+  preventDefault?: boolean
+
+  /**
+   * Set to false to prevent having the hook call .stopPropagation() on a handled key event.
+   */
+  stopPropagation?: boolean
 }
 
 export interface UseKeyboardNavigationHook {
