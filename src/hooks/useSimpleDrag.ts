@@ -8,6 +8,7 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
   const {
     enabled = true,
     threshold = 2,
+    button = LEFT_BUTTON,
   } = config
 
   const timer = useTimer()
@@ -21,6 +22,7 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
   const pointerIdRef = useRef<number | undefined>(undefined)
   const configRef = useContinuousRef(config)
   const origCursorRef = useRef<CSSProperties['cursor'] | undefined>(undefined)
+  const origUserSelectRef = useRef<string | undefined>(undefined)
   const origTargetRef = useRef<EventTarget | null>(null)
 
   const makeRelative = useCallback((point: Point) => {
@@ -57,6 +59,8 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
     if (!(event.target instanceof Element)) { return }
     if (!(event.currentTarget instanceof Element)) { return }
     if (configRef.current.rootOnly && event.target !== event.currentTarget) { return }
+    if (button != null && event.button !== button) { return }
+    if (configRef.current.accept?.(event.target, event) === false) { return }
     if (pointerIdRef.current != null) { return }
 
     const anchor = getClientPoint(event)
@@ -83,7 +87,7 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
     
     offsetRef.current = offset
     sizeRef.current = size  
-  }, [configRef])
+  }, [button, configRef])
 
   const resetCursor = useCallback(() => {
     if (origCursorRef.current == null) { return }
@@ -99,6 +103,22 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
     document.body.style.cursor = config.cursor
   }, [config.cursor])
 
+  // A press may already have started a text selection by the time it turns into a drag.
+  const suppressTextSelection = useCallback(() => {
+    if (origUserSelectRef.current != null) { return }
+
+    window.getSelection()?.removeAllRanges()
+    origUserSelectRef.current = document.body.style.userSelect
+    document.body.style.userSelect = 'none'
+  }, [])
+
+  const restoreTextSelection = useCallback(() => {
+    if (origUserSelectRef.current == null) { return }
+
+    document.body.style.userSelect = origUserSelectRef.current
+    origUserSelectRef.current = undefined
+  }, [])
+
   const clearDragState = useCallback((element?: Element | null) => {
     const pointerId = pointerIdRef.current
     if (element != null && pointerId != null) {
@@ -108,13 +128,14 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
     }
 
     resetCursor()
+    restoreTextSelection()
     anchorRef.current = undefined
     stateRef.current = undefined
     pointerIdRef.current = undefined
     currentPointRef.current = undefined
     timer.clearAll()
     historyRef.current = []
-  }, [resetCursor, timer])
+  }, [resetCursor, restoreTextSelection, timer])
 
   const handleMove = useCallback((event: Event) => {
     if (!(event instanceof PointerEvent)) { return }
@@ -148,6 +169,7 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
       historyRef.current.push({point: extent, time: performance.now()})
 
       setDragCursor()
+      suppressTextSelection()
 
       const scheduleSample = () => {
         timer.setTimeout(() => {
@@ -170,7 +192,7 @@ export function useSimpleDrag<S>(ref: RefObject<Element | null>, config: SimpleD
 
     configRef.current.drag?.(metrics, stateRef.current as S, event.target, event)
     event.preventDefault()
-  }, [configRef, makeMetrics, makeRelative, setDragCursor, threshold, timer])
+  }, [configRef, makeMetrics, makeRelative, setDragCursor, suppressTextSelection, threshold, timer])
 
   const handleEnd = useCallback((event: Event) => {
     if (!(event instanceof PointerEvent)) { return }
@@ -248,7 +270,9 @@ export interface SimpleDragConfig<S> {
   velocitySampleInterval?: number
   cursor?: CSSProperties['cursor']
   rootOnly?: boolean
+  button?: number | null
 
+  accept?: (element: Element, event: PointerEvent) => boolean
   start?: (metrics: DragMetrics, element: Element, event: PointerEvent | TouchEvent) => S
   drag?:  (metrics: DragMetrics, state: S, element: Element, event: PointerEvent | TouchEvent) => void
   end?:   (metrics: DragMetrics, state: S, element: Element, event: PointerEvent | TouchEvent) => void
@@ -280,3 +304,6 @@ function computeVelocity(history: Array<{point: Point, time: number}>, current: 
   }
 }
 
+export const LEFT_BUTTON = 0
+export const MIDDLE_BUTTON = 1
+export const RIGHT_BUTTON = 2
