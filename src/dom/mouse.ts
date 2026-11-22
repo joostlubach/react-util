@@ -1,4 +1,4 @@
-import { Point } from 'ytil'
+import { Point } from '@mosdev/ytil'
 
 export function getClientPoint(event: MouseEvent | TouchEvent | PointerEvent): Point | null {
   if (event instanceof MouseEvent || event instanceof PointerEvent) {

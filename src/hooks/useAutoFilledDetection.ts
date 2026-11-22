@@ -1,6 +1,6 @@
 import { every } from 'lodash'
 import { RefObject, useEffect, useState } from 'react'
-import { useTimer } from 'react-timer'
+import { useTimer } from '@mosdev/react-timer'
 
 export function useAutoFilledDetection(refs: RefObject<HTMLElement | null>[]) {
   const timer = useTimer()

@@ -1,6 +1,6 @@
 import { isArray } from 'lodash'
 import { Ref, useCallback, useState } from 'react'
-import { objectEntries, objectEquals } from 'ytil'
+import { objectEntries, objectEquals } from '@mosdev/ytil'
 
 export function useComputedStyle<E extends ComputedStyleExtract>(extract: E): UseComputedStyleHook<E> {
   const [output, setOutput] = useState<Partial<ComputedStyleOutput<E>>>({})

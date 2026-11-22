@@ -1,6 +1,6 @@
 import { isArray, isPlainObject } from 'lodash'
 import React from 'react'
-import { objectKeys } from 'ytil'
+import { objectKeys } from '@mosdev/ytil'
 import { useContinuousRef } from './refs'
 
 /**

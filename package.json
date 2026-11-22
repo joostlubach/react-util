@@ -1,5 +1,5 @@
 {
-  "name": "react-util",
+  "name": "@mosdev/react-util",
   "version": "1.0.1",
   "description": "Utilities for React, like commonly used hooks.",
   "author": "Joost Lubach",
@@ -37,11 +37,11 @@
   },
   "dependencies": {
     "lodash": "^4.17.21",
-    "logger": "workspace:^",
-    "react-timer": "workspace:^",
+    "@mosdev/logger": "workspace:^",
+    "@mosdev/react-timer": "workspace:^",
     "scroll-into-view": "^1.16.2",
     "uuid": "10.0.0",
-    "ytil": "workspace:^"
+    "@mosdev/ytil": "workspace:^"
   },
   "devDependencies": {
     "@stylistic/eslint-plugin": "^5.10.0",

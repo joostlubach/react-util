@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { useTimer } from 'react-timer'
+import { useTimer } from '@mosdev/react-timer'
 
 export function useTimedReset<T>(set: () => T, reset: () => T, timeout: number): [T, () => void] {
   const [value, setValue] = useState(reset())

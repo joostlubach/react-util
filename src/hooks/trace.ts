@@ -1,4 +1,4 @@
-import Logger from 'logger'
+import Logger from '@mosdev/logger'
 import React from 'react'
 
 export function useMountTrace(tag: string) {

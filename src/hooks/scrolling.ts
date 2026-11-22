@@ -1,6 +1,6 @@
 import { clamp } from 'lodash'
 import { RefObject, useCallback, useEffect, useState } from 'react'
-import { useTimer } from 'react-timer'
+import { useTimer } from '@mosdev/react-timer'
 import { RefMap, useRefMap } from './refs'
 
 export function useScrollInfo(ref: RefObject<HTMLElement | null>): ScrollInfo {

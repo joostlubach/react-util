@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
-import { isFunction } from 'ytil'
+import { isFunction } from '@mosdev/ytil'
 import { useContinuousRef } from './refs'
 
 const STORAGE: Storage | null = 'localStorage' in globalThis ? globalThis.localStorage : null

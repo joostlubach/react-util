@@ -1,5 +1,5 @@
 import { Ref, RefObject, useMemo, useRef } from 'react'
-import { isFunction } from 'ytil'
+import { isFunction } from '@mosdev/ytil'
 
 export function useContinuousRef<T>(current: T): RefObject<T> {
   const ref = useRef<T>(current)

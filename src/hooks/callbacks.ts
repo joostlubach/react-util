@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react'
-import { useTimer } from 'react-timer'
+import { useTimer } from '@mosdev/react-timer'
 
 /**
  * Creates a throttled callback that will only invoke the provided callback function at most once every specified delay.

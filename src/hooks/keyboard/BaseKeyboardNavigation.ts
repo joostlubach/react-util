@@ -1,4 +1,4 @@
-import { arrayEquals } from 'ytil'
+import { arrayEquals } from '@mosdev/ytil'
 import { Key, KeyboardNavigationData, KeyboardNavigationNode, KeyPath } from './types'
 
 export abstract class BaseKeyboardNavigation<K extends Key = Key> {

@@ -1,5 +1,5 @@
 import { CSSProperties, useEffect, useMemo, useState } from 'react'
-import { useTimer } from 'react-timer'
+import { useTimer } from '@mosdev/react-timer'
 
 export function useOverflowDuringTransition(ref: React.RefObject<HTMLElement | null>, overflow: CSSProperties['overflow']) {
   useEffect(() => {

@@ -1,5 +1,5 @@
 import React from 'react'
-import { useTimer } from 'react-timer'
+import { useTimer } from '@mosdev/react-timer'
 
 export function useDebounced<T>(actual: T, debounce: number): T {
   const [value, setValue] = React.useState<T>(actual)

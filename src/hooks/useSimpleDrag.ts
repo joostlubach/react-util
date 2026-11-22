@@ -1,6 +1,6 @@
 import { CSSProperties, RefObject, useCallback, useEffect, useRef } from 'react'
-import { useTimer } from 'react-timer'
-import { Point, Size } from 'ytil'
+import { useTimer } from '@mosdev/react-timer'
+import { Point, Size } from '@mosdev/ytil'
 import { getClientPoint } from '../dom'
 import { useContinuousRef } from './refs'
 

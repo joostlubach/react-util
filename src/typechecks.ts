@@ -8,7 +8,7 @@ import {
   ReactElement,
   ReactNode,
 } from 'react'
-import { isFunction, isPlainObject } from 'ytil'
+import { isFunction, isPlainObject } from '@mosdev/ytil'
 
 export function childrenOfType<P>(children: ReactNode, ...types: ComponentType<P>[]): Array<ReactElement<P>> {
   return extractChildren<P>(children, element => {

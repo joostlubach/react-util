@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { hasMethod } from 'ytil'
+import { hasMethod } from '@mosdev/ytil'
 
 export function useDisposable<T>(disposable: T): T {
   useEffect(() => () => {
