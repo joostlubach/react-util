@@ -19,9 +19,13 @@ export function usePreventDocumentScroll(enabled: boolean) {
   }, [enabled])
 }
 
+/** Marker classes for fixed elements that should make up for the scrollbar width while the document is locked. */
 export interface PreventDocumentScrollOptions {
-  /** Fixed elements with this class get the scrollbar width added to their right padding too, like Joy's `mui-fixed`. */
-  fixedClassName?: string | null
+  /** Gets the scrollbar width added to its right padding, like the body. For full-width bars (Joy's `mui-fixed`). */
+  padClassName?: string | null
+
+  /** Gets the scrollbar width added to its right margin, which keeps a right-anchored element where it was. */
+  shiftClassName?: string | null
 }
 
 export function configurePreventDocumentScroll(config: PreventDocumentScrollOptions) {
@@ -29,7 +33,8 @@ export function configurePreventDocumentScroll(config: PreventDocumentScrollOpti
 }
 
 const options: PreventDocumentScrollOptions = {
-  fixedClassName: null,
+  padClassName:   null,
+  shiftClassName: null,
 }
 
 let lockCounter = 0
@@ -40,8 +45,10 @@ interface OriginalStyles {
   htmlOverscrollBehavior: string
   bodyOverflow:           string
   bodyOverscrollBehavior: string
-  paddingRight:           Map<HTMLElement, string>
+  compensated:            Array<[HTMLElement, CompensatedProperty, string]>
 }
+
+type CompensatedProperty = 'paddingRight' | 'marginRight'
 
 function lock() {
   const html = document.documentElement
@@ -52,17 +59,17 @@ function lock() {
     htmlOverscrollBehavior: html.style.overscrollBehavior,
     bodyOverflow:           body.style.overflow,
     bodyOverscrollBehavior: body.style.overscrollBehavior,
-    paddingRight:           new Map(),
+    compensated:            [],
   }
 
   // Measured before hiding the overflow, so the content doesn't shift when the scrollbar disappears.
   const scrollbarWidth = window.innerWidth - html.clientWidth
   if (scrollbarWidth > 0) {
-    for (const element of paddedElements()) {
-      originalStyles.paddingRight.set(element, element.style.paddingRight)
-
-      const paddingRight = parseFloat(getComputedStyle(element).paddingRight) || 0
-      element.style.paddingRight = `${paddingRight + scrollbarWidth}px`
+    for (const element of [body, ...markedElements(options.padClassName)]) {
+      compensate(element, 'paddingRight', scrollbarWidth)
+    }
+    for (const element of markedElements(options.shiftClassName)) {
+      compensate(element, 'marginRight', scrollbarWidth)
     }
   }
 
@@ -83,17 +90,23 @@ function unlock() {
   body.style.overflow = originalStyles.bodyOverflow
   body.style.overscrollBehavior = originalStyles.bodyOverscrollBehavior
 
-  for (const [element, paddingRight] of originalStyles.paddingRight) {
-    element.style.paddingRight = paddingRight
+  for (const [element, property, value] of originalStyles.compensated) {
+    element.style[property] = value
   }
 
   originalStyles = null
 }
 
-function paddedElements(): HTMLElement[] {
-  const {fixedClassName} = options
-  if (fixedClassName == null) { return [document.body] }
+function compensate(element: HTMLElement, property: CompensatedProperty, scrollbarWidth: number) {
+  originalStyles?.compensated.push([element, property, element.style[property]])
 
-  const fixed = document.getElementsByClassName(fixedClassName)
-  return [document.body, ...Array.from(fixed).filter((it): it is HTMLElement => it instanceof HTMLElement)]
+  const current = parseFloat(getComputedStyle(element)[property]) || 0
+  element.style[property] = `${current + scrollbarWidth}px`
+}
+
+function markedElements(className: string | null | undefined): HTMLElement[] {
+  if (className == null) { return [] }
+
+  const elements = document.getElementsByClassName(className)
+  return Array.from(elements).filter((it): it is HTMLElement => it instanceof HTMLElement)
 }
