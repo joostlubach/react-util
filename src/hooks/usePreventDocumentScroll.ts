@@ -19,6 +19,19 @@ export function usePreventDocumentScroll(enabled: boolean) {
   }, [enabled])
 }
 
+export interface PreventDocumentScrollOptions {
+  /** Fixed elements with this class get the scrollbar width added to their right padding too, like Joy's `mui-fixed`. */
+  fixedClassName?: string | null
+}
+
+export function configurePreventDocumentScroll(config: PreventDocumentScrollOptions) {
+  Object.assign(options, config)
+}
+
+const options: PreventDocumentScrollOptions = {
+  fixedClassName: null,
+}
+
 let lockCounter = 0
 let originalStyles: OriginalStyles | null = null
 
@@ -27,7 +40,7 @@ interface OriginalStyles {
   htmlOverscrollBehavior: string
   bodyOverflow:           string
   bodyOverscrollBehavior: string
-  bodyPaddingRight:       string
+  paddingRight:           Map<HTMLElement, string>
 }
 
 function lock() {
@@ -39,14 +52,18 @@ function lock() {
     htmlOverscrollBehavior: html.style.overscrollBehavior,
     bodyOverflow:           body.style.overflow,
     bodyOverscrollBehavior: body.style.overscrollBehavior,
-    bodyPaddingRight:       body.style.paddingRight,
+    paddingRight:           new Map(),
   }
 
   // Measured before hiding the overflow, so the content doesn't shift when the scrollbar disappears.
   const scrollbarWidth = window.innerWidth - html.clientWidth
   if (scrollbarWidth > 0) {
-    const paddingRight = parseFloat(getComputedStyle(body).paddingRight) || 0
-    body.style.paddingRight = `${paddingRight + scrollbarWidth}px`
+    for (const element of paddedElements()) {
+      originalStyles.paddingRight.set(element, element.style.paddingRight)
+
+      const paddingRight = parseFloat(getComputedStyle(element).paddingRight) || 0
+      element.style.paddingRight = `${paddingRight + scrollbarWidth}px`
+    }
   }
 
   html.style.overflow = 'hidden'
@@ -65,7 +82,18 @@ function unlock() {
   html.style.overscrollBehavior = originalStyles.htmlOverscrollBehavior
   body.style.overflow = originalStyles.bodyOverflow
   body.style.overscrollBehavior = originalStyles.bodyOverscrollBehavior
-  body.style.paddingRight = originalStyles.bodyPaddingRight
+
+  for (const [element, paddingRight] of originalStyles.paddingRight) {
+    element.style.paddingRight = paddingRight
+  }
 
   originalStyles = null
+}
+
+function paddedElements(): HTMLElement[] {
+  const {fixedClassName} = options
+  if (fixedClassName == null) { return [document.body] }
+
+  const fixed = document.getElementsByClassName(fixedClassName)
+  return [document.body, ...Array.from(fixed).filter((it): it is HTMLElement => it instanceof HTMLElement)]
 }
